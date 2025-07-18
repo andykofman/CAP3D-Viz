@@ -207,4 +207,4 @@ plt.tight_layout()
 plt.show()
 
 # Save as GIF (optional - uncomment if you want to save)
-# anim.save('block_construction.gif', writer='pillow', fps=5) 
+anim.save('block_construction.gif', writer='pillow', fps=5) 
