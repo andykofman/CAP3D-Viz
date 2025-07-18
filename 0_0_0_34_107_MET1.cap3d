@@ -1,0 +1,381 @@
+<cap3d>
+<window>
+	name RS16X2_CM4_WM0_char2
+	v1(0.000000,0.000000,-0.100000)
+	v2(5.000000,5.000000,7.409550)
+</window>
+<layer>
+	name TO
+	type interconnect
+</layer>
+<layer>
+	name POLY1
+	type interconnect
+</layer>
+<layer>
+	name MET1
+	type interconnect
+</layer>
+<layer>
+	name MET2
+	type interconnect
+</layer>
+<layer>
+	name MET3
+	type interconnect
+</layer>
+<layer>
+	name MET4
+	type interconnect
+</layer>
+<layer>
+	name MET5
+	type interconnect
+</layer>
+<layer>
+	name MET6
+	type interconnect
+</layer>
+<layer>
+	name MET7
+	type interconnect
+</layer>
+<layer>
+	name MET8
+	type interconnect
+</layer>
+<layer>
+	name VIA1
+	type via
+</layer>
+<layer>
+	name VIA2
+	type via
+</layer>
+<layer>
+	name VIA3
+	type via
+</layer>
+<layer>
+	name VIA4
+	type via
+</layer>
+<layer>
+	name VIA5
+	type via
+</layer>
+<layer>
+	name VIA6
+	type via
+</layer>
+<layer>
+	name VIA7
+	type via
+</layer>
+<layer>
+	name POLY1CONT
+	type via
+</layer>
+<layer>
+	name NDIFFCONT
+	type via
+</layer>
+<layer>
+	name PDIFFCONT
+	type via
+</layer>
+<layer>
+	name SUBCONT
+	type via
+</layer>
+<medium>
+	name TOXA_plate
+	<block>
+		basepoint(0.000000,0.000000,0.000000)
+		v1(5.000000,0,0)
+		v2(0,5.000000,0)
+		hvector(0,0,0.218400)
+	</block>
+	diel 4.100000
+</medium>
+<medium>
+	name TOXB_plate
+	<block>
+		basepoint(0.000000,0.000000,0.218400)
+		v1(5.000000,0,0)
+		v2(0,5.000000,0)
+		hvector(0,0,0.181600)
+	</block>
+	diel 4.100000
+</medium>
+<medium>
+	name TOXC_plate
+	<block>
+		basepoint(0.000000,0.000000,0.400000)
+		v1(5.000000,0,0)
+		v2(0,5.000000,0)
+		hvector(0,0,0.001550)
+	</block>
+	diel 3.900000
+</medium>
+<medium>
+	name ILD1a_plate
+	<block>
+		basepoint(0.000000,0.000000,0.401550)
+		v1(5.000000,0,0)
+		v2(0,5.000000,0)
+		hvector(0,0,0.015000)
+	</block>
+	diel 4.300000
+</medium>
+<medium>
+	name ILD1b_plate
+	<block>
+		basepoint(0.000000,0.000000,0.416550)
+		v1(5.000000,0,0)
+		v2(0,5.000000,0)
+		hvector(0,0,0.022000)
+	</block>
+	diel 7.900000
+</medium>
+<medium>
+	name ILD1c_plate
+	<block>
+		basepoint(0.000000,0.000000,0.438550)
+		v1(5.000000,0,0)
+		v2(0,5.000000,0)
+		hvector(0,0,0.525000)
+	</block>
+	diel 4.000000
+</medium>
+<medium>
+	name ILD2a_plate
+	<block>
+		basepoint(0.000000,0.000000,0.963550)
+		v1(5.000000,0,0)
+		v2(0,5.000000,0)
+		hvector(0,0,0.991000)
+	</block>
+	diel 3.700000
+</medium>
+<medium>
+	name ILD2b_plate
+	<block>
+		basepoint(0.000000,0.000000,1.954550)
+		v1(5.000000,0,0)
+		v2(0,5.000000,0)
+		hvector(0,0,0.100000)
+	</block>
+	diel 4.100000
+</medium>
+<medium>
+	name ILD3a_plate
+	<block>
+		basepoint(0.000000,0.000000,2.054550)
+		v1(5.000000,0,0)
+		v2(0,5.000000,0)
+		hvector(0,0,0.991000)
+	</block>
+	diel 3.700000
+</medium>
+<medium>
+	name ILD3b_plate
+	<block>
+		basepoint(0.000000,0.000000,3.045550)
+		v1(5.000000,0,0)
+		v2(0,5.000000,0)
+		hvector(0,0,0.100000)
+	</block>
+	diel 4.100000
+</medium>
+<medium>
+	name ILD4a_plate
+	<block>
+		basepoint(0.000000,0.000000,3.145550)
+		v1(5.000000,0,0)
+		v2(0,5.000000,0)
+		hvector(0,0,0.991000)
+	</block>
+	diel 3.700000
+</medium>
+<medium>
+	name ILD4b_plate
+	<block>
+		basepoint(0.000000,0.000000,4.136550)
+		v1(5.000000,0,0)
+		v2(0,5.000000,0)
+		hvector(0,0,0.100000)
+	</block>
+	diel 4.100000
+</medium>
+<medium>
+	name ILD5a_plate
+	<block>
+		basepoint(0.000000,0.000000,4.236550)
+		v1(5.000000,0,0)
+		v2(0,5.000000,0)
+		hvector(0,0,0.991000)
+	</block>
+	diel 3.700000
+</medium>
+<medium>
+	name ILD5b_plate
+	<block>
+		basepoint(0.000000,0.000000,5.227550)
+		v1(5.000000,0,0)
+		v2(0,5.000000,0)
+		hvector(0,0,0.100000)
+	</block>
+	diel 4.100000
+</medium>
+<medium>
+	name ILD6a_plate
+	<block>
+		basepoint(0.000000,0.000000,5.327550)
+		v1(5.000000,0,0)
+		v2(0,5.000000,0)
+		hvector(0,0,0.991000)
+	</block>
+	diel 3.700000
+</medium>
+<medium>
+	name ILD6b_plate
+	<block>
+		basepoint(0.000000,0.000000,6.318550)
+		v1(5.000000,0,0)
+		v2(0,5.000000,0)
+		hvector(0,0,0.100000)
+	</block>
+	diel 4.100000
+</medium>
+<medium>
+	name ILD7a_plate
+	<block>
+		basepoint(0.000000,0.000000,6.418550)
+		v1(5.000000,0,0)
+		v2(0,5.000000,0)
+		hvector(0,0,0.991000)
+	</block>
+	diel 3.700000
+</medium>
+<conductor>
+	name 0_SUBSTRATE
+	<block>
+		name 0@SUBSTRATE
+		basepoint(0.000000,0.000000,-0.100000)
+		v1(5.000000,0,0)
+		v2(0,5.000000,0)
+		hvector(0,0,0.100000)
+	</block>
+</conductor>
+<conductor>
+	name 2_MET3
+	<block>
+		name 3747@MET3
+		basepoint(3.414000,0.000000,3.145550)
+		v1(1.000000,0,0)
+		v2(0,5.000000,0)
+		hvector(0,0,0.510000)
+	</block>
+</conductor>
+<conductor>
+	name 1_MET1
+	<block>
+		name 1254@MET1
+		basepoint(3.858000,2.120000,0.963550)
+		v1(0.280000,0,0)
+		v2(0,2.880000,0)
+		hvector(0,0,0.410000)
+	</block>
+	<poly>
+		name 2344@MET1
+		basepoint(1.138000,0.000000,0.963550)
+		v1(1,0,0)
+		v2(0,1,0)
+		hvector(0,0,0.410000)
+		<coord>
+			(0.000000,0.000000) (0.200000,0.000000) (0.200000,1.660000) (0.000000,1.460000) 
+		</coord>
+	</poly>
+	<block>
+		name 721@MET1
+		basepoint(0.500000,0.000000,0.963550)
+		v1(0.638000,0,0)
+		v2(0,1.460000,0)
+		hvector(0,0,0.410000)
+	</block>
+	<block>
+		name 731@MET1
+		basepoint(1.338000,0.000000,0.963550)
+		v1(0.326000,0,0)
+		v2(0,5.000000,0)
+		hvector(0,0,0.410000)
+	</block>
+</conductor>
+<conductor>
+	name 167_POLY1
+	<block>
+		name 12467@POLY1
+		basepoint(3.265000,2.100000,0.401550)
+		v1(0.500000,0,0)
+		v2(0,2.900000,0)
+		hvector(0,0,0.180000)
+	</block>
+	<block>
+		name 12469@POLY1
+		basepoint(3.265000,1.914000,0.401550)
+		v1(0.500000,0,0)
+		v2(0,0.186000,0)
+		hvector(0,0,0.180000)
+	</block>
+</conductor>
+<conductor>
+	name 1_MET3
+	<block>
+		name 877@MET3
+		basepoint(0.500000,0.000000,3.145550)
+		v1(0.438000,0,0)
+		v2(0,1.460000,0)
+		hvector(0,0,0.510000)
+	</block>
+	<block>
+		name 2935@MET3
+		basepoint(1.814000,0.000000,3.145550)
+		v1(1.000000,0,0)
+		v2(0,5.000000,0)
+		hvector(0,0,0.510000)
+	</block>
+</conductor>
+<conductor>
+	name 1_MET2
+	<block>
+		name 770@MET2
+		basepoint(0.500000,0.000000,2.054550)
+		v1(4.500000,0,0)
+		v2(0,1.460000,0)
+		hvector(0,0,0.510000)
+	</block>
+</conductor>
+<conductor>
+	name 107_MET1_main
+	<block>
+		name 11475_3@MET1
+		basepoint(2.892000,4.500000,0.963550)
+		v1(0.280000,0,0)
+		v2(0,0.500000,0)
+		hvector(0,0,0.410000)
+	</block>
+	<block>
+		name 11475@MET1
+		basepoint(2.892000,2.120000,0.963550)
+		v1(0.280000,0,0)
+		v2(0,2.380000,0)
+		hvector(0,0,0.410000)
+	</block>
+</conductor>
+<task>
+	<capacitance>
+		107_MET1_main
+	</capacitance>
+</task>
+</cap3d>
