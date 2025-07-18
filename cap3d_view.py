@@ -300,11 +300,11 @@ def draw_components(mediums, conductors, z_slice=None, title_suffix=""):
     plt.show()
 
 
-# === Run ===
-cap3d_file = 'smallcaseD.cap3d'
-window, mediums, conductors = parse_cap3d(cap3d_file)
-# Full plot
-draw_components(mediums, conductors, z_slice=None, title_suffix=" (All)")
-# Sliced plot (z < 2.0)
-draw_components(mediums, conductors, z_slice=2.0, title_suffix=" (z < 2.0)")
+# # === Run ===
+# cap3d_file = 'smallcaseD.cap3d'
+# window, mediums, conductors = parse_cap3d(cap3d_file)
+# # Full plot
+# draw_components(mediums, conductors, z_slice=None, title_suffix=" (All)")
+# # Sliced plot (z < 2.0)
+# draw_components(mediums, conductors, z_slice=2.0, title_suffix=" (z < 2.0)")
 
