@@ -1,0 +1,7 @@
+# Core dependencies
+numpy>=1.20.0
+matplotlib>=3.5.0
+
+# Interactive visualization (recommended)
+plotly>=5.0.0
+

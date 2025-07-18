@@ -1,10 +1,9 @@
-from re import A
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 from itertools import cycle
 import numpy as np
-from cap3d_view import parse_cap3d, create_block_vertices
+from cap3d_matplotlib import parse_cap3d, create_block_vertices
 
 def draw_components_plotly(mediums, conductors, z_slice=None, title_suffix="", show_mediums=True, show_conductors=True):
     fig = go.Figure()
@@ -173,9 +172,17 @@ def show_visualization_menu(cap3d_file):
     
     return figs
 
-# === Enhanced Execution ===
+# === Configuration ===
+# Change this to your CAP3D file name
+CAP3D_FILE = "0_0_0_34_107_MET1.cap3d"
+
+# === Execution ===
 if __name__ == "__main__":
-    cap3d_file = '0_0_0_34_107_MET1.cap3d'
+    import os
+    # Get the directory containing this script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # Look for the file in examples directory (one level up from src)
+    cap3d_file = os.path.join(script_dir, "..", "examples", CAP3D_FILE)
     
     # Create dashboard
     figs = show_visualization_menu(cap3d_file)
