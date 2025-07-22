@@ -11,7 +11,7 @@ RWCap-v4: floating Random Walk based Capacitance solver for conductor structures
 - See `src/cap3d_enhanced_README.md` for details and usage
 
 
- ![LOD](docs/LOD.png)
+ ![LOD](docs/image.png)
 
 
 ## Interactive Version (Recommended)
