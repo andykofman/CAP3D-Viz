@@ -5,7 +5,12 @@ A Python tool for visualizing 3D geometry and block construction from CAP3D file
 **Citation:**
 RWCap-v4: floating Random Walk based Capacitance solver for conductor structures. Version 4 released. [2023] (Numerical methods for big data / design automation) Group
 
-## 🆕 Enhanced Interactive Version (Recommended)
+### 🆕 Enhanced Version (cap3d_enhanced.py) (Under Development)
+- Optimized for large CAP3D files and advanced workflows
+- Inspired by `LEVEL OF DETAIL` from TU Delft ([link to article](https://osmbuildings.org/blog/2018-02-28_level_of_detail/)) ![LOD](docs/image.png)
+- See `src/cap3d_enhanced_README.md` for details and usage
+
+## Interactive Version (Recommended)
 
 The **new Plotly version** (`cap3d_plotly.py`) provides a modern, interactive 3D visualization experience with enhanced features:
 
@@ -59,7 +64,7 @@ cap3d_view/
 │   ├── __init__.py         
 │   ├── cap3d_plotly.py       # Interactive visualization (recommended)
 │   ├── cap3d_matplotlib.py   # Legacy matplotlib version
-│   ├── cap3d_enhanced.py     # Enhanced large file parser 
+│   ├── cap3d_enhanced.py     # Enhanced large file parser (see separate README)
 │   └── block_animation.py    # Block construction 
 |
 |
