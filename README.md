@@ -7,8 +7,12 @@ RWCap-v4: floating Random Walk based Capacitance solver for conductor structures
 
 ### 🆕 Enhanced Version (cap3d_enhanced.py) (Under Development)
 - Optimized for large CAP3D files and advanced workflows
-- Inspired by `LEVEL OF DETAIL` from TU Delft ([link to article](https://osmbuildings.org/blog/2018-02-28_level_of_detail/)) ![LOD](docs/image.png)
+- Inspired by `LEVEL OF DETAIL` from TU Delft. Although the proposed idea in the ([article](https://osmbuildings.org/blog/2018-02-28_level_of_detail/)) is for buildings. However, the same approach can be applied to visualizing integrated circuits
 - See `src/cap3d_enhanced_README.md` for details and usage
+
+
+ ![LOD](docs/image.png)
+
 
 ## Interactive Version (Recommended)
 
