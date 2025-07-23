@@ -3,7 +3,7 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 from itertools import cycle
 import numpy as np
-from cap3d_matplotlib import parse_cap3d, create_block_vertices
+from .cap3d_matplotlib import parse_cap3d, create_block_vertices
 
 def draw_components_plotly(mediums, conductors, z_slice=None, title_suffix="", show_mediums=True, show_conductors=True):
     fig = go.Figure()
