@@ -32,6 +32,7 @@ def test_filter_blocks_spatial_and_volume():
         make_block("b1", "medium", [0,0,0], [1,0,0], [0,1,0], [0,0,1]),
         make_block("b2", "medium", [10,10,10], [1,0,0], [0,1,0], [0,0,1])
     ]
+    
     min_xyz = np.array([0,0,0])
     max_xyz = np.array([5,5,5])
     filtered = vis.filter_blocks(spatial_filter=(min_xyz, max_xyz))

@@ -70,6 +70,7 @@ class Block:
     def volume(self) -> float:
         """Calculate volume for LOD prioritization"""
         return float(abs(np.dot(self.v1, np.cross(self.v2, self.hvec))))
+        
 
 
 

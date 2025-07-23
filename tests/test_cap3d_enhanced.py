@@ -10,6 +10,7 @@ import pytest
 from src.cap3d_enhanced import Block, StreamingCap3DParser
 
 def test_block_properties():
+    
     """Test Block class: vertices, bounds, volume, and center calculations for a unit cube."""
     base = [0, 0, 0]
     v1 = [1, 0, 0]

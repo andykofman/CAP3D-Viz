@@ -9,6 +9,7 @@ def draw_components_plotly(mediums, conductors, z_slice=None, title_suffix="", s
     fig = go.Figure()
 
     # Enhanced color schemes with better contrast
+    
     medium_colors = cycle(['rgba(31,119,180,0.3)', 'rgba(44,160,44,0.3)', 'rgba(255,127,14,0.3)', 
                           'rgba(148,103,189,0.3)', 'rgba(140,86,75,0.3)', 'rgba(227,119,194,0.3)'])
     conductor_colors = cycle(['rgba(214,39,40,0.9)', 'rgba(227,119,194,0.9)', 'rgba(127,127,127,0.9)', 
