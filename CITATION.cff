@@ -6,7 +6,6 @@ authors:
   - family-names: Ali
     given-names: Ahmed
     orcid: "https://orcid.org/0000-0000-0000-0000"
-    affiliation: "RWCap Group"
 version: "0.1.0"
 doi: 10.5281/zenodo.16363911
 repository-code: "https://github.com/andykofman/RWCap_view"
