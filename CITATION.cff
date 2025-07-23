@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "RWCap_view: 3D Capacitance Visualization and Analysis"
+version: "0.1.0"
+authors:
+  - family-names: Ali
+    given-names: Ahmed
+    orcid: "https://orcid.org/0000-0000-0000-0000"
+    affiliation: "RWCap Group"
+version: "0.1.0"
+doi: 10.5281/zenodo.16363911
+repository-code: "https://github.com/andykofman/RWCap_view"
+license: MIT
+date-released: 2025-07-23
+keywords:
+  - 3D visualization
+  - capacitance
+  - RWCap
+  - integrated circuits
+  - scientific computing
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.16363911" # this version
+  - type: doi
+    value: "10.5281/zenodo.16363911" # concept DOI (replace if different) 
