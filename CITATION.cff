@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 title: "RWCap_view: 3D Capacitance Visualization and Analysis"
-version: "0.1.0"
+version: "1.0.1"
 authors:
   - family-names: Ali
     given-names: Ahmed
