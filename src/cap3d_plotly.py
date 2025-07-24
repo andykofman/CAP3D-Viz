@@ -1,9 +1,18 @@
+import sys
+import os
+# Add the src directory to sys.path if running as a script
+if __name__ == "__main__":
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    src_dir = script_dir
+    if src_dir not in sys.path:
+        sys.path.insert(0, src_dir)
+
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 from itertools import cycle
 import numpy as np
-from .cap3d_matplotlib import parse_cap3d, create_block_vertices
+from cap3d_matplotlib import parse_cap3d, create_block_vertices
 
 def draw_components_plotly(mediums, conductors, z_slice=None, title_suffix="", show_mediums=True, show_conductors=True):
     fig = go.Figure()
@@ -175,11 +184,10 @@ def show_visualization_menu(cap3d_file):
 
 # === Configuration ===
 # Change this to your CAP3D file name
-CAP3D_FILE = "0_0_0_34_107_MET1.cap3d"
+CAP3D_FILE = "0_120_38_30_89_MET1.cap3d"
 
 # === Execution ===
 if __name__ == "__main__":
-    import os
     # Get the directory containing this script
     script_dir = os.path.dirname(os.path.abspath(__file__))
     # Look for the file in examples directory (one level up from src)
