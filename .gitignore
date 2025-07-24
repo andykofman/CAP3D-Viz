@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 *.pyd
 *.pyo
+*.cap3d
 
 # Environment
 .env
