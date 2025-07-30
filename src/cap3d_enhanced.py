@@ -70,6 +70,22 @@ class Block:
     def volume(self) -> float:
         """Calculate volume for LOD prioritization"""
         return float(abs(np.dot(self.v1, np.cross(self.v2, self.hvec))))
+
+
+@dataclass
+class CachedMesh:
+    """Cached mesh data for efficient rendering"""
+    x: np.ndarray
+    y: np.ndarray  
+    z: np.ndarray
+    i: List[int]
+    j: List[int]
+    k: List[int]
+    block_type: str
+    block_index: int
+    center: np.ndarray
+    volume: float
+    bounds: Tuple[np.ndarray, np.ndarray]
         
 
 
@@ -196,12 +212,17 @@ class StreamingCap3DParser:
 from itertools import cycle
 
 class OptimizedCap3DVisualizer:
-    """ High-performance 3D visualizer with LOD and filtering """
+    """ High-performance 3D visualizer with LOD and caching """
     def __init__ (self, max_blocks_display: int = 20000):
         self.max_blocks_display = max_blocks_display
         self.blocks = []
         self.bounds = None
-
+        
+        # Caching system for performance
+        self._cached_meshes: List[CachedMesh] = []
+        self._mesh_cache_valid = False
+        self._figure_cache: Optional[go.Figure] = None
+        
         # Enhanced color schemes with better contrast
         self.medium_colors = ['rgba(31,119,180,0.3)', 'rgba(44,160,44,0.3)', 'rgba(255,127,14,0.3)', 
                             'rgba(148,103,189,0.3)', 'rgba(140,86,75,0.3)', 'rgba(227,119,194,0.3)']
@@ -230,6 +251,10 @@ class OptimizedCap3DVisualizer:
         # calculate global bounds
         self._calculate_bounds()
         
+        # Invalidate caches
+        self._mesh_cache_valid = False
+        self._figure_cache = None
+        
     def _calculate_bounds(self):
         """ helper funct to calculate bounding box for all blocks """
 
@@ -249,18 +274,130 @@ class OptimizedCap3DVisualizer:
         self.bounds = (all_mins.min(axis=0), all_maxs.max(axis=0))
         print(f"Global bounds: {self.bounds}")
 
+    def _build_mesh_cache(self, max_blocks: Optional[int] = None, use_lod: bool = True):
+        """Build cached mesh data for all blocks once"""
+        print("Building mesh cache...")
+        start_time = time.time()
+        
+        # Apply LOD if needed
+        blocks_to_cache = self.blocks
+        if use_lod and max_blocks and len(blocks_to_cache) > max_blocks:
+            blocks_to_cache = self._apply_lod(blocks_to_cache, max_blocks)
+        
+        self._cached_meshes = []
+        for idx, block in enumerate(blocks_to_cache):
+            if idx % 1000 == 0 and idx > 0:
+                print(f"  Cached {idx}/{len(blocks_to_cache)} meshes...")
+                
+            vertices = block.vertices
+            
+            # Define faces using vertex indices (same as before)
+            faces = [
+                [0, 1, 2], [0, 2, 3],  # bottom
+                [4, 7, 6], [4, 6, 5],  # top
+                [0, 4, 5], [0, 5, 1],  # front
+                [2, 6, 7], [2, 7, 3],  # back
+                [1, 5, 6], [1, 6, 2],  # right
+                [0, 3, 7], [0, 7, 4],  # left
+            ]
+            
+            i, j, k = [], [], []
+            for face in faces:
+                i.append(face[0])
+                j.append(face[1])
+                k.append(face[2])
+            
+            cached_mesh = CachedMesh(
+                x=vertices[:, 0],
+                y=vertices[:, 1], 
+                z=vertices[:, 2],
+                i=i,
+                j=j,
+                k=k,
+                block_type=block.type,
+                block_index=idx,
+                center=block.center,
+                volume=block.volume,
+                bounds=block.bounds
+            )
+            self._cached_meshes.append(cached_mesh)
+        
+        self._mesh_cache_valid = True
+        cache_time = time.time() - start_time
+        print(f"Built mesh cache for {len(self._cached_meshes)} blocks in {cache_time:.2f}s")
+
+    def _create_figure_with_all_traces(self) -> go.Figure:
+        """Create figure with all traces, using visibility for filtering"""
+        if not self._mesh_cache_valid:
+            raise RuntimeError("Mesh cache not built. Call _build_mesh_cache() first.")
+        
+        print("Creating figure with all traces...")
+        start_time = time.time()
+        
+        fig = go.Figure()
+        
+        # Group meshes by type and color
+        medium_colors = cycle(self.medium_colors)
+        conductor_colors = cycle(self.conductor_colors)
+        
+        # Add all traces at once
+        for mesh in self._cached_meshes:
+            if mesh.block_type == 'medium':
+                color = next(medium_colors)
+                opacity = 0.3
+                name = f"Medium {mesh.block_index}"
+            else:
+                color = next(conductor_colors)
+                opacity = 0.9
+                name = f"Conductor {mesh.block_index}"
+            
+            fig.add_trace(go.Mesh3d(
+                x=mesh.x,
+                y=mesh.y,
+                z=mesh.z,
+                i=mesh.i,
+                j=mesh.j,
+                k=mesh.k,
+                color=color,
+                opacity=opacity,
+                name=name,
+                showscale=False,
+                visible=True,  # All start visible
+                hovertemplate=f'<b>{mesh.block_type.title()} {mesh.block_index}</b><br>X: %{{x}}<br>Y: %{{y}}<br>Z: %{{z}}<extra></extra>',
+                # Store metadata for filtering
+                customdata=[mesh.block_type, mesh.center[2], mesh.volume]
+            ))
+        
+        # Configure layout once
+        fig.update_layout(
+            scene=dict(
+                xaxis_title='X (mm)',
+                yaxis_title='Y (mm)', 
+                zaxis_title='Z (mm)',
+                aspectmode='data'
+            ),
+            title=f'Cached 3D CAP3D Visualization ({len(self._cached_meshes)} blocks)',
+            showlegend=False,  # Too many traces for useful legend
+            width=1200,
+            height=800
+        )
+        
+        build_time = time.time() - start_time
+        print(f"Created figure with {len(self._cached_meshes)} traces in {build_time:.2f}s")
+        
+        return fig
     
     def filter_blocks(self,
                      show_mediums: bool = True,
                      show_conductors: bool = True,
-                     z_min: Optional[float] = None,         # If set, only include blocks whose minimum z-coordinate (vertical position) is greater than or equal to this value.
-                     z_max: Optional[float] = None,         # If set, only include blocks whose maximum z-coordinate is less than or equal to this value.
-                     spatial_filter: Optional[Tuple[np.ndarray, np.ndarray]] = None, # If set, should be a tuple (min_xyz, max_xyz) where each is a numpy array of shape (3,).
-                     volume_threshold: Optional[float] = None # If set, only include blocks whose volume (as computed by the Block class) is greater than or equal to this value.
+                     z_min: Optional[float] = None,         
+                     z_max: Optional[float] = None,         
+                     spatial_filter: Optional[Tuple[np.ndarray, np.ndarray]] = None,
+                     volume_threshold: Optional[float] = None
                     
                       ) ->List[Block]:
 
-            """Advance filtering with multiple criteria"""
+            """Advanced filtering with multiple criteria"""
 
             filtered = []
 
@@ -295,7 +432,140 @@ class OptimizedCap3DVisualizer:
                 filtered.append(block)
             return filtered
 
+    def _create_filtered_figure_from_cache(self,
+                                          show_mediums: bool = True,
+                                          show_conductors: bool = True,
+                                          z_min: Optional[float] = None,
+                                          z_max: Optional[float] = None) -> go.Figure:
+        """Create a new figure with only the filtered meshes from cache"""
+        if not self._cached_meshes:
+            raise RuntimeError("No cached meshes available. Build cache first.")
+        
+        print("Creating filtered figure from cache...")
+        start_time = time.time()
+        
+        fig = go.Figure()
+        
+        # Filter and add only the relevant meshes
+        medium_colors = cycle(self.medium_colors)
+        conductor_colors = cycle(self.conductor_colors)
+        visible_count = 0
+        
+        for mesh in self._cached_meshes:
+            # Apply filters
+            include = True
+            
+            # Type filter
+            if mesh.block_type == 'medium' and not show_mediums:
+                include = False
+            elif mesh.block_type == 'conductor' and not show_conductors:
+                include = False
+            
+            # Z-slice filter
+            if include and z_min is not None:
+                min_bound, max_bound = mesh.bounds
+                if max_bound[2] < z_min or (z_max is not None and min_bound[2] > z_max):
+                    include = False
+            elif include and z_max is not None:
+                min_bound, max_bound = mesh.bounds
+                if min_bound[2] > z_max:
+                    include = False
+            
+            if include:
+                if mesh.block_type == 'medium':
+                    color = next(medium_colors)
+                    opacity = 0.3
+                    name = f"Medium {mesh.block_index}"
+                else:
+                    color = next(conductor_colors)
+                    opacity = 0.9
+                    name = f"Conductor {mesh.block_index}"
+                
+                fig.add_trace(go.Mesh3d(
+                    x=mesh.x,
+                    y=mesh.y,
+                    z=mesh.z,
+                    i=mesh.i,
+                    j=mesh.j,
+                    k=mesh.k,
+                    color=color,
+                    opacity=opacity,
+                    name=name,
+                    showscale=False,
+                    hovertemplate=f'<b>{mesh.block_type.title()} {mesh.block_index}</b><br>X: %{{x}}<br>Y: %{{y}}<br>Z: %{{z}}<extra></extra>'
+                ))
+                visible_count += 1
+        
+        # Configure layout
+        fig.update_layout(
+            scene=dict(
+                xaxis_title='X (mm)',
+                yaxis_title='Y (mm)', 
+                zaxis_title='Z (mm)',
+                aspectmode='data'
+            ),
+            title=f'Cached 3D CAP3D Visualization ({visible_count}/{len(self._cached_meshes)} blocks visible)',
+            showlegend=False,  # Too many traces for useful legend
+            width=1200,
+            height=800
+        )
+        
+        build_time = time.time() - start_time
+        print(f"Created filtered figure with {visible_count} traces in {build_time:.3f}s")
+        
+        return fig
 
+    def apply_filters_to_figure(self, fig: go.Figure,
+                               show_mediums: bool = True,
+                               show_conductors: bool = True,
+                               z_min: Optional[float] = None,
+                               z_max: Optional[float] = None) -> go.Figure:
+        """Apply filters by toggling trace visibility instead of rebuilding"""
+        
+        if not self._cached_meshes:
+            raise RuntimeError("No cached meshes available. Build cache first.")
+        
+        print("Applying filters via visibility toggle...")
+        start_time = time.time()
+        
+        # Create visibility mask
+        visibility_mask = []
+        visible_count = 0
+        
+        for i, mesh in enumerate(self._cached_meshes):
+            visible = True
+            
+            # Type filter
+            if mesh.block_type == 'medium' and not show_mediums:
+                visible = False
+            elif mesh.block_type == 'conductor' and not show_conductors:
+                visible = False
+            
+            # Z-slice filter
+            if visible and z_min is not None:
+                min_bound, max_bound = mesh.bounds
+                if max_bound[2] < z_min or (z_max is not None and min_bound[2] > z_max):
+                    visible = False
+            elif visible and z_max is not None:
+                min_bound, max_bound = mesh.bounds
+                if min_bound[2] > z_max:
+                    visible = False
+            
+            visibility_mask.append(visible)
+            if visible:
+                visible_count += 1
+        
+        # Update trace visibility individually
+        for i, visible in enumerate(visibility_mask):
+            fig.data[i].visible = visible
+        
+        # Update title
+        fig.update_layout(title=f'Filtered 3D CAP3D Visualization ({visible_count}/{len(self._cached_meshes)} blocks visible)')
+        
+        filter_time = time.time() - start_time
+        print(f"Applied filters to {visible_count}/{len(self._cached_meshes)} blocks in {filter_time:.3f}s")
+        
+        return fig
 
     def create_optimized_visualization(self, 
                                        show_mediums: bool = True,
@@ -305,9 +575,35 @@ class OptimizedCap3DVisualizer:
                                        use_lod: bool = True,
                                        show_edges: bool = True,
                                        opacity_mediums: float = 0.3,
-                                       opacity_conductors: float = 0.9) -> go.Figure:
-        """Create optimized plotly visualization"""
+                                       opacity_conductors: float = 0.9,
+                                       use_cache: bool = True) -> go.Figure:
+        """Create optimized plotly visualization using caching"""
 
+        # Build cache if needed
+        if use_cache and not self._mesh_cache_valid:
+            self._build_mesh_cache(max_blocks=max_blocks, use_lod=use_lod)
+        
+        # We no longer cache the entire figure, just the mesh data
+        
+        if use_cache:
+            # Create new figure with cached meshes and apply filters
+            fig = self._create_filtered_figure_from_cache(
+                show_mediums=show_mediums,
+                show_conductors=show_conductors,
+                z_max=z_slice
+            )
+        else:
+            # Fallback to old method (for comparison)
+            print("Using non-cached visualization (slower)...")
+            fig = self._create_visualization_legacy(
+                show_mediums, show_conductors, z_slice, max_blocks, use_lod, show_edges, 
+                opacity_mediums, opacity_conductors
+            )
+        
+        return fig
+
+    def _create_visualization_legacy(self, show_mediums, show_conductors, z_slice, max_blocks, use_lod, show_edges, opacity_mediums, opacity_conductors):
+        """Legacy visualization method for comparison"""
         print("Filtering blocks....")
         filtered_blocks = self.filter_blocks(
             show_mediums = show_mediums,
@@ -316,16 +612,14 @@ class OptimizedCap3DVisualizer:
         )
 
         # Apply LOD if needed
-
         if use_lod and max_blocks and len(filtered_blocks) > max_blocks:
             filtered_blocks = self._apply_lod(filtered_blocks, max_blocks)
         
-        print(f"Visaualizing {len(filtered_blocks)} blocks...")
+        print(f"Visualizing {len(filtered_blocks)} blocks...")
 
         fig = go.Figure()
 
         # Group blocks by type for efficient rendering
-
         mediums = [b for b in filtered_blocks if b.type == 'medium']
         conductors = [b for b in filtered_blocks if b.type == 'conductor']
 
@@ -346,7 +640,7 @@ class OptimizedCap3DVisualizer:
                 zaxis_title='Z (mm)',
                 aspectmode='data'
             ),
-            title=f'Optimized 3D Cap3D Visualization ({len(filtered_blocks)} blocks)',
+            title=f'Legacy 3D Cap3D Visualization ({len(filtered_blocks)} blocks)',
             showlegend=True,
             legend=dict(itemsizing='constant'),
             width=1200,
@@ -417,7 +711,7 @@ class OptimizedCap3DVisualizer:
         # For now, return a basic figure with buttons
         fig = self.create_optimized_visualization()
         
-        # Add filter buttons
+        # Add filter buttons that work with cached visualization
         fig.update_layout(
             updatemenus=[
                 dict(
@@ -425,17 +719,19 @@ class OptimizedCap3DVisualizer:
                     direction="left",
                     buttons=list([
                         dict(
-                            args=[{"visible": [True, True]}],
+                            args=[{"visible": [True] * len(fig.data)}],
                             label="Show All",
                             method="restyle"
                         ),
                         dict(
-                            args=[{"visible": [True, False]}],
+                            # Show only mediums (odd traces in our pattern)
+                            args=[{"visible": [i % 2 == 0 for i in range(len(fig.data))]}],
                             label="Mediums Only", 
                             method="restyle"
                         ),
                         dict(
-                            args=[{"visible": [False, True]}],
+                            # Show only conductors (even traces in our pattern)  
+                            args=[{"visible": [i % 2 == 1 for i in range(len(fig.data))]}],
                             label="Conductors Only",
                             method="restyle"
                         )
@@ -457,12 +753,20 @@ class OptimizedCap3DVisualizer:
         fig.write_html(filename, include_plotlyjs='cdn')
         print(f"Visualization saved to {filename}")
 
+    def clear_cache(self):
+        """Clear all caches to free memory"""
+        self._cached_meshes = []
+        self._mesh_cache_valid = False
+        self._figure_cache = None
+        print("Cleared all visualization caches")
+
 
 # Convenience functions
 def load_and_visualize(file_path: str, 
                       max_blocks: int = 10000,
                       z_slice: Optional[float] = None,
-                      export_html: bool = True) -> go.Figure:
+                      export_html: bool = True,
+                      use_cache: bool = True) -> go.Figure:
     """One-shot function to load and visualize a cap3d file"""
     visualizer = OptimizedCap3DVisualizer(max_blocks_display=max_blocks)
     visualizer.load_data(file_path)
@@ -470,7 +774,8 @@ def load_and_visualize(file_path: str,
     fig = visualizer.create_optimized_visualization(
         z_slice=z_slice,
         max_blocks=max_blocks,
-        use_lod=True
+        use_lod=True,
+        use_cache=use_cache
     )
     
     if export_html:
