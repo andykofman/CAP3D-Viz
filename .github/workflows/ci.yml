@@ -68,6 +68,7 @@ jobs:
     
     - name: Check code formatting with black
       run: |
+        black src/ tests/
         black --check src/ tests/
     
     - name: Lint with flake8
