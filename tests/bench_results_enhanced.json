@@ -1,0 +1,82 @@
+{
+  "system": {
+    "python": "3.13.5",
+    "platform": "Windows-11-10.0.26100-SP0",
+    "cpu": "Intel64 Family 6 Model 158 Stepping 10, GenuineIntel",
+    "repeat": 2,
+    "enhanced_version": "ehnanced_cap3d.py"
+  },
+  "runs": [
+    {
+      "file": "large_test_10k.cap3d",
+      "blocks": 10000,
+      "conductors": 5000,
+      "mediums": 5000,
+      "t_parse_s": 0.8604804999195039,
+      "t_build_s": 13.193883999949321,
+      "t_render_s": 6.748985299956985,
+      "t_first_frame_s": 20.80334979982581,
+      "peak_tracemalloc_mb": 7.255923271179199,
+      "delta_rss_mb": 15.75,
+      "latencies_s": {
+        "filter_conductors": 0.5585745999123901,
+        "filter_mediums": 0.6410634000785649,
+        "z_slice": 1.3498323999810964
+      },
+      "parse_stats": {
+        "total_blocks": 10000,
+        "conductors": 5000,
+        "mediums": 5000,
+        "poly_elements": 0,
+        "layers": 0,
+        "has_window": false,
+        "has_task": false,
+        "parse_time": 0.8604302406311035
+      }
+    },
+    {
+      "file": "large_test_10k.cap3d",
+      "blocks": 10000,
+      "conductors": 5000,
+      "mediums": 5000,
+      "t_parse_s": 1.163349699927494,
+      "t_build_s": 9.51903119997587,
+      "t_render_s": 4.26742569997441,
+      "t_first_frame_s": 14.949806599877775,
+      "peak_tracemalloc_mb": 7.253488540649414,
+      "delta_rss_mb": 3.46875,
+      "latencies_s": {
+        "filter_conductors": 0.35921470005996525,
+        "filter_mediums": 0.28512659994885325,
+        "z_slice": 0.7612126000458375
+      },
+      "parse_stats": {
+        "total_blocks": 10000,
+        "conductors": 5000,
+        "mediums": 5000,
+        "poly_elements": 0,
+        "layers": 0,
+        "has_window": false,
+        "has_task": false,
+        "parse_time": 1.1633124351501465
+      }
+    }
+  ],
+  "summary": [
+    {
+      "file": "large_test_10k.cap3d",
+      "blocks": 10000,
+      "conductors": 5000,
+      "mediums": 5000,
+      "t_parse_mean_s": 1.011915099923499,
+      "t_parse_std_s": 0.151434600003995,
+      "t_first_mean_s": 17.876578199851792,
+      "peak_mb_mean": 7.254705905914307,
+      "rss_delta_mb": 9.609375,
+      "filter_conductors_ms_mean": 458.8946499861777,
+      "filter_mediums_ms_mean": 463.09500001370907,
+      "z_slice_ms_mean": 1055.522500013467,
+      "blocks_per_sec_parse": 9882.251980186878
+    }
+  ]
+}
