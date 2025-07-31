@@ -7,9 +7,7 @@ We are committed to providing security updates for the following versions:
 | Version | Supported          |
 | ------- | ------------------ |
 | 1.0.x   | :white_check_mark: |
-| 0.9.x   | :white_check_mark: |
-| 0.8.x   | :x:                |
-| < 0.8   | :x:                |
+| < 1.0   | :x:                |
 
 ## Reporting a Vulnerability
 
@@ -21,7 +19,7 @@ Security vulnerabilities should be reported privately to prevent potential explo
 
 ### 2. Report the vulnerability
 
-Send an email to our security team at: **security@cap3d-view.org**
+Send an email to : **ali.a@aucegypt.edu**
 
 **Include the following information:**
 
@@ -77,13 +75,6 @@ cap3d_view includes several security features:
 
 If you find a security issue, please report it using the process above.
 
-## Security Updates
-
-Security updates will be released as:
-
-- **Patch releases** (e.g., 1.0.1 → 1.0.2) for critical security fixes
-- **Minor releases** (e.g., 1.0.0 → 1.1.0) for security improvements
-- **Security advisories** will be published on GitHub
 
 ## Responsible Disclosure
 
@@ -96,7 +87,7 @@ We follow responsible disclosure practices:
 
 ## Security Contacts
 
-- **Security Team**: security@cap3d-view.org
+- **Team**: ali.a@aucegypt.edu
 - **Maintainers**: See [CONTRIBUTING.md](CONTRIBUTING.md) for maintainer contacts
 - **GitHub Security**: Use GitHub's security features for repository-specific issues
 
