@@ -4,6 +4,8 @@
 
 The CAP3D Enhanced modules provide high-performance, memory-efficient parsing and visualization for CAP3D files, specifically optimized for large-scale integrated circuit designs. The latest **Enhanced Cache Memory** implementation delivers **2.5x faster workflows** with advanced 3D visualization capabilities.
 
+**Note**: The enhanced parser has been refactored into a modular architecture (`enhanced_cache_memory/`) for better scalability while maintaining backward compatibility with the original `ehnanced_Cache_memory.py`.
+
 ## Performance Benchmarks
 
 Based on comprehensive testing with **large_test_10k.cap3d** (10,000 blocks):
@@ -27,6 +29,14 @@ Based on comprehensive testing with **large_test_10k.cap3d** (10,000 blocks):
 4. **CachedMesh**: Pre-computed mesh data for instant rendering
 5. **Level of Detail (LOD)**: Intelligent block prioritization system
 6. **Batched Rendering**: Groups thousands of blocks into optimized traces
+
+### Modular Architecture (enhanced_cache_memory/)
+
+- **data_models.py**: Core data structures (Block, CachedMesh, Layer, etc.)
+- **parser.py**: State-machine parser and streaming capabilities
+- **visualizer.py**: 3D visualization engine with caching
+- **utils.py**: Convenience functions for common operations
+- **__init__.py**: Main entry point with backward compatibility
 
 ### Key Optimizations
 

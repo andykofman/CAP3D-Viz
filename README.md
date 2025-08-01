@@ -14,8 +14,9 @@ _For a historical overview see [docs/README_legacy.md](docs/README_legacy.md) an
 - **Concept DOI:** [10.5281/zenodo.16406690](https://doi.org/10.5281/zenodo.16363911)
 - RWCap-v4: floating Random Walk based Capacitance solver for conductor structures. Version 4       released. [2023] (Numerical methods for big data / design automation) Group
 
-### Enhanced Version (ehnanced_Cache_memory.py) - Production Ready
+### Enhanced Version (enhanced_cache_memory/) - Production Ready
 
+- **Modular architecture** with separate components for data models, parsing, visualization, and utilities
 - **State-machine based parser** with **dispatch tables** for maximum performance
 - **Context-aware parsing** - only checks relevant conditions per parsing state
 - **Optimized for massive CAP3D files** (tested up to 10k+ blocks) with true streaming parser
@@ -64,12 +65,12 @@ _For a historical overview see [docs/README_legacy.md](docs/README_legacy.md) an
 
 ## Optimized Version (Recommended)
 
-The **state-machine optimized version** (`ehnanced_Cache_memory.py`) provides the highest performance CAP3D parsing and visualization:
+The **state-machine optimized version** (`enhanced_cache_memory/`) provides the highest performance CAP3D parsing and visualization with a modular architecture for better scalability:
 
 ### Usage (Optimized Version)
 
 ```python
-from src.ehnanced_Cache_memory import OptimizedCap3DVisualizer
+from src.enhanced_cache_memory import OptimizedCap3DVisualizer
 
 # Quick visualization
 visualizer = OptimizedCap3DVisualizer()
@@ -85,8 +86,10 @@ fig = visualizer.create_optimized_visualization(
 )
 fig.show()
 
-# Or run directly
-python src/ehnanced_Cache_memory.py
+# Or use the convenience functions
+from src.enhanced_cache_memory import load_and_visualize
+fig = load_and_visualize("examples/0_120_38_30_89_MET1.cap3d")
+fig.show()
 ```
 
 ### Optimized Features
@@ -159,7 +162,14 @@ cap3d_view/
 │   ├── cap3d_plotly.py         # Interactive visualization (legacy)
 │   ├── cap3d_matplotlib.py     # Legacy matplotlib version
 │   ├── cap3d_enhanced.py       # Original enhanced parser
-│   ├── ehnanced_Cache_memory.py # 🚀 OPTIMIZED: State-machine parser (recommended)
+│   ├── ehnanced_Cache_memory.py # 🚀 OPTIMIZED: State-machine parser (backward compatibility)
+│   ├── enhanced_cache_memory/   # 🚀 MODULAR: Refactored optimized parser (recommended)
+│   │   ├── __init__.py         # Main entry point
+│   │   ├── data_models.py      # Core data structures
+│   │   ├── parser.py           # State-machine parser
+│   │   ├── visualizer.py       # 3D visualization engine
+│   │   ├── utils.py            # Convenience functions
+│   │   └── README.md           # Module documentation
 │   └── block_animation.py      # Block construction animation
 ├── tests/                      # Performance benchmarks and validation
 │   ├── test_benchmark.py       # Comprehensive performance testing
@@ -350,7 +360,7 @@ The optimized parser supports **all CAP3D elements**:
 ### Optimized Version (Recommended)
 
 ```python
-from src.ehnanced_Cache_memory import OptimizedCap3DVisualizer
+from src.enhanced_cache_memory import OptimizedCap3DVisualizer
 
 # Configure visualization options
 visualizer = OptimizedCap3DVisualizer(max_blocks_display=50000)
@@ -379,6 +389,17 @@ filtered_blocks = visualizer.filter_blocks(
 # Interactive dashboard
 dashboard = visualizer.create_interactive_dashboard(use_batched=True)
 dashboard.show()
+
+# Or use the modular components directly
+from src.enhanced_cache_memory import StreamingCap3DParser, load_and_visualize
+
+# Parse data
+parser = StreamingCap3DParser("your_file.cap3d")
+data = parser.parse_complete()
+
+# Quick visualization
+fig = load_and_visualize("your_file.cap3d")
+fig.show()
 ```
 
 ### Legacy Versions
@@ -388,13 +409,15 @@ dashboard.show()
 
 ## 🎉 Major Improvements Summary
 
-### 2025 State-Machine Parser Optimization
+### 2025 State-Machine Parser Optimization & Modular Refactoring
 
 ✅ **70-80% reduction** in condition checking per line
 ✅ **9,882+ blocks/second** parsing performance
 ✅ **Context-aware dispatch** - only relevant logic executed
 ✅ **Memory efficient** - <8MB for 10,000 blocks
 ✅ **Complete CAP3D support** - all element types
+✅ **Modular architecture** - separated into focused components for better scalability
+✅ **Backward compatibility** - original `ehnanced_Cache_memory.py` still available
 
 ### Advanced Visualization Features
 
