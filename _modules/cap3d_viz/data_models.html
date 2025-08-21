@@ -80,7 +80,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Union</span>
 
 
 <div class="viewcode-block" id="Block">
@@ -90,8 +90,17 @@
 
 <div class="viewcode-block" id="Block.__init__">
 <a class="viewcode-back" href="../../cap3d_viz.html#cap3d_viz.Block.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">parent_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
-                 <span class="n">base</span><span class="p">,</span> <span class="n">v1</span><span class="p">,</span> <span class="n">v2</span><span class="p">,</span> <span class="n">hvec</span><span class="p">,</span> <span class="n">diel</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">parent_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">base</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+        <span class="n">v1</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+        <span class="n">v2</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+        <span class="n">hvec</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+        <span class="n">diel</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>  <span class="c1"># medium or conductor </span>
@@ -144,17 +153,17 @@
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">CachedMesh</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Cached mesh data for efficient rendering&quot;&quot;&quot;</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>  <span class="c1"># X coordinates of vertices</span>
-    <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>  <span class="c1"># Y coordinates of vertices</span>
-    <span class="n">z</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>  <span class="c1"># Z coordinates of vertices</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>  <span class="c1"># X coordinates of vertices</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>  <span class="c1"># Y coordinates of vertices</span>
+    <span class="n">z</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>  <span class="c1"># Z coordinates of vertices</span>
     <span class="n">i</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>   <span class="c1"># Face connectivity indices</span>
     <span class="n">j</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
     <span class="n">k</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
     <span class="n">block_type</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># medium or conductor</span>
     <span class="n">block_index</span><span class="p">:</span> <span class="nb">int</span>  <span class="c1"># original block index</span>
-    <span class="n">center</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>  <span class="c1"># center point of the block</span>
+    <span class="n">center</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>  <span class="c1"># center point of the block</span>
     <span class="n">volume</span><span class="p">:</span> <span class="nb">float</span>  <span class="c1"># volume of the block</span>
-    <span class="n">bounds</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span>  <span class="c1"># bounding box of the block</span></div>
+    <span class="n">bounds</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span>  <span class="c1"># bounding box of the block</span></div>
 
         
 <div class="viewcode-block" id="Layer">
@@ -214,8 +223,8 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">Window</span><span class="p">:</span> 
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulation window/boundary definition&quot;&quot;&quot;</span>
     <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
-    <span class="n">v1</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>  <span class="c1"># Corner 1</span>
-    <span class="n">v2</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>  <span class="c1"># Corner 2</span>
+    <span class="n">v1</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>  <span class="c1"># Corner 1</span>
+    <span class="n">v2</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>  <span class="c1"># Corner 2</span>
     <span class="n">boundary_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># e.g., &#39;dirichlet&#39;</span></div>
 
 
@@ -239,7 +248,7 @@
     <span class="n">layers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Layer</span><span class="p">]</span>
     <span class="n">window</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Window</span><span class="p">]</span>
     <span class="n">task</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Task</span><span class="p">]</span>
-    <span class="n">stats</span><span class="p">:</span> <span class="n">Dict</span> </div>
+    <span class="n">stats</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]</span> </div>
 
 </pre></div>
 

@@ -80,7 +80,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">MutableMapping</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.data_models</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -93,9 +93,35 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">ParserState</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Optimized parser state for state-machine based parsing&quot;&quot;&quot;</span>
     
+    <span class="c1"># Section state</span>
+    <span class="n">current_section</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">current_section_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">current_diel</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+    
+    <span class="c1"># Context flags</span>
+    <span class="n">in_block</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">in_poly</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">in_task</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">in_capacitance</span><span class="p">:</span> <span class="nb">bool</span>
+    
+    <span class="c1"># Data containers</span>
+    <span class="n">block_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="n">poly_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="n">layer_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="n">window_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="n">task_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="n">coord_buffer</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span>
+    
+    <span class="c1"># Pending objects for efficient collection</span>
+    <span class="n">pending_block</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Block</span><span class="p">]</span>
+    <span class="n">pending_poly</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PolyElement</span><span class="p">]</span>
+    <span class="n">pending_layer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Layer</span><span class="p">]</span>
+    <span class="n">pending_window</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Window</span><span class="p">]</span>
+    <span class="n">pending_task</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Task</span><span class="p">]</span>
+
 <div class="viewcode-block" id="ParserState.__init__">
 <a class="viewcode-back" href="../../cap3d_viz.html#cap3d_viz.ParserState.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># Section state</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_section</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_section_name</span> <span class="o">=</span> <span class="kc">None</span>
@@ -132,7 +158,7 @@
     
 <div class="viewcode-block" id="StreamingCap3DParser.__init__">
 <a class="viewcode-back" href="../../cap3d_viz.html#cap3d_viz.StreamingCap3DParser.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">file_path</span> <span class="o">=</span> <span class="n">file_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stats</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;total_blocks&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
@@ -291,7 +317,7 @@
         <span class="p">)</span></div>
 
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_create_tag_handlers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_tag_handlers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">ParserState</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create optimized tag dispatch table&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="s1">&#39;&lt;layer&gt;&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start_layer</span><span class="p">,</span>
@@ -314,7 +340,7 @@
             <span class="s1">&#39;&lt;/capacitance&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_end_capacitance</span><span class="p">,</span>
         <span class="p">}</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_create_property_handlers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_property_handlers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create optimized property dispatch table&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="s1">&#39;name &#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_name</span><span class="p">,</span>
@@ -326,8 +352,18 @@
             <span class="s1">&#39;hvector(&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_hvector</span><span class="p">,</span>
         <span class="p">}</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_line_optimized</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">tag_handlers</span><span class="p">,</span> <span class="n">property_handlers</span><span class="p">,</span> 
-                              <span class="n">blocks</span><span class="p">,</span> <span class="n">poly_elements</span><span class="p">,</span> <span class="n">layers</span><span class="p">,</span> <span class="n">layer_types</span><span class="p">,</span> <span class="n">boundary_types</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_line_optimized</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">,</span>
+        <span class="n">tag_handlers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">ParserState</span><span class="p">],</span> <span class="kc">None</span><span class="p">]],</span>
+        <span class="n">property_handlers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]],</span>
+        <span class="n">blocks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Block</span><span class="p">],</span>
+        <span class="n">poly_elements</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">PolyElement</span><span class="p">],</span>
+        <span class="n">layers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Layer</span><span class="p">],</span>
+        <span class="n">layer_types</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">boundary_types</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Optimized line handler using state-based dispatch&quot;&quot;&quot;</span>
         
         <span class="c1"># Fast path 1: Check for exact tag matches first</span>
@@ -365,11 +401,11 @@
         <span class="k">return</span> <span class="kc">False</span>
     
     <span class="c1"># Optimized tag handlers</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_start_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span> 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_start_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> 
         <span class="n">state</span><span class="o">.</span><span class="n">current_section</span> <span class="o">=</span> <span class="s1">&#39;layer&#39;</span>
         <span class="n">state</span><span class="o">.</span><span class="n">layer_data</span> <span class="o">=</span> <span class="p">{}</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_end_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_end_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">layer_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">state</span><span class="o">.</span><span class="n">layer_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;type&#39;</span><span class="p">):</span>
             <span class="c1"># Direct append without function call overhead</span>
             <span class="n">state</span><span class="o">.</span><span class="n">pending_layer</span> <span class="o">=</span> <span class="n">Layer</span><span class="p">(</span>
@@ -380,11 +416,11 @@
         <span class="n">state</span><span class="o">.</span><span class="n">current_section</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">state</span><span class="o">.</span><span class="n">layer_data</span> <span class="o">=</span> <span class="p">{}</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_start_window</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_start_window</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">state</span><span class="o">.</span><span class="n">current_section</span> <span class="o">=</span> <span class="s1">&#39;window&#39;</span>
         <span class="n">state</span><span class="o">.</span><span class="n">window_data</span> <span class="o">=</span> <span class="p">{}</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_end_window</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_end_window</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">window_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;v1&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">state</span><span class="o">.</span><span class="n">window_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;v2&#39;</span><span class="p">):</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
             <span class="n">state</span><span class="o">.</span><span class="n">pending_window</span> <span class="o">=</span> <span class="n">Window</span><span class="p">(</span>
@@ -396,34 +432,34 @@
         <span class="n">state</span><span class="o">.</span><span class="n">current_section</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">state</span><span class="o">.</span><span class="n">window_data</span> <span class="o">=</span> <span class="p">{}</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_start_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_start_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">state</span><span class="o">.</span><span class="n">current_section</span> <span class="o">=</span> <span class="s1">&#39;task&#39;</span>
         <span class="n">state</span><span class="o">.</span><span class="n">in_task</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">state</span><span class="o">.</span><span class="n">task_data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;capacitance_targets&#39;</span><span class="p">:</span> <span class="p">[]}</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_end_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_end_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">task_data</span><span class="p">[</span><span class="s1">&#39;capacitance_targets&#39;</span><span class="p">]:</span>
             <span class="n">state</span><span class="o">.</span><span class="n">pending_task</span> <span class="o">=</span> <span class="n">Task</span><span class="p">(</span><span class="n">capacitance_targets</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">task_data</span><span class="p">[</span><span class="s1">&#39;capacitance_targets&#39;</span><span class="p">])</span>
         <span class="n">state</span><span class="o">.</span><span class="n">current_section</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">state</span><span class="o">.</span><span class="n">in_task</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">state</span><span class="o">.</span><span class="n">task_data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;capacitance_targets&#39;</span><span class="p">:</span> <span class="p">[]}</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_start_medium</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_start_medium</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">state</span><span class="o">.</span><span class="n">current_section</span> <span class="o">=</span> <span class="s1">&#39;medium&#39;</span>
         <span class="n">state</span><span class="o">.</span><span class="n">current_section_name</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">state</span><span class="o">.</span><span class="n">current_diel</span> <span class="o">=</span> <span class="kc">None</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_start_conductor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_start_conductor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">state</span><span class="o">.</span><span class="n">current_section</span> <span class="o">=</span> <span class="s1">&#39;conductor&#39;</span>
         <span class="n">state</span><span class="o">.</span><span class="n">current_section_name</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">state</span><span class="o">.</span><span class="n">current_diel</span> <span class="o">=</span> <span class="kc">None</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_end_section</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_end_section</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">state</span><span class="o">.</span><span class="n">current_section</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">state</span><span class="o">.</span><span class="n">current_section_name</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">state</span><span class="o">.</span><span class="n">current_diel</span> <span class="o">=</span> <span class="kc">None</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_start_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_start_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">state</span><span class="o">.</span><span class="n">in_block</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">state</span><span class="o">.</span><span class="n">block_data</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;section_type&#39;</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">current_section</span><span class="p">,</span>
@@ -431,7 +467,7 @@
             <span class="s1">&#39;diel&#39;</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">current_diel</span>
         <span class="p">}</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_end_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_end_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">in_block</span><span class="p">:</span>
             <span class="n">state</span><span class="o">.</span><span class="n">in_block</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_valid_block</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">block_data</span><span class="p">):</span>
@@ -445,7 +481,7 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;conductors&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="n">state</span><span class="o">.</span><span class="n">block_data</span> <span class="o">=</span> <span class="p">{}</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_start_poly</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_start_poly</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">state</span><span class="o">.</span><span class="n">in_poly</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">state</span><span class="o">.</span><span class="n">poly_data</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;section_type&#39;</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">current_section</span><span class="p">,</span>
@@ -453,7 +489,7 @@
         <span class="p">}</span>
         <span class="n">state</span><span class="o">.</span><span class="n">coord_buffer</span> <span class="o">=</span> <span class="p">[]</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_end_poly</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_end_poly</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">state</span><span class="o">.</span><span class="n">in_poly</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_valid_poly</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">poly_data</span><span class="p">):</span>
             <span class="n">poly_element</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_poly_element</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">poly_data</span><span class="p">,</span> <span class="n">state</span><span class="o">.</span><span class="n">coord_buffer</span><span class="p">)</span>
@@ -463,22 +499,27 @@
         <span class="n">state</span><span class="o">.</span><span class="n">poly_data</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">state</span><span class="o">.</span><span class="n">coord_buffer</span> <span class="o">=</span> <span class="p">[]</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_start_coord</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_start_coord</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">pass</span>  <span class="c1"># Coordinate handling is done in property parsing</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_end_coord</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_end_coord</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">pass</span>  <span class="c1"># End of coord section</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_start_capacitance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_start_capacitance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">in_task</span><span class="p">:</span>
             <span class="n">state</span><span class="o">.</span><span class="n">in_capacitance</span> <span class="o">=</span> <span class="kc">True</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_end_capacitance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_end_capacitance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">in_task</span><span class="p">:</span>
             <span class="n">state</span><span class="o">.</span><span class="n">in_capacitance</span> <span class="o">=</span> <span class="kc">False</span>
     
     <span class="c1"># Optimized property handlers with reduced string operations</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_block_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">property_handlers</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_block_properties</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">,</span>
+        <span class="n">property_handlers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle block properties efficiently&quot;&quot;&quot;</span>
         <span class="c1"># Quick check for common property prefixes</span>
         <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;name &#39;</span><span class="p">):</span>
@@ -502,7 +543,12 @@
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">return</span> <span class="kc">False</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_poly_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">property_handlers</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_poly_properties</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">,</span>
+        <span class="n">property_handlers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle poly properties efficiently&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;&lt;coord&gt;&#39;</span><span class="p">):</span>
             <span class="c1"># Extract coordinate from the coord line</span>
@@ -538,7 +584,7 @@
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">return</span> <span class="kc">False</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_layer_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">layer_types</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_layer_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">,</span> <span class="n">layer_types</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle layer properties efficiently&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;name &#39;</span><span class="p">):</span>
             <span class="n">state</span><span class="o">.</span><span class="n">layer_data</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
@@ -550,7 +596,13 @@
             <span class="k">return</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="kc">True</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_window_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">property_handlers</span><span class="p">,</span> <span class="n">boundary_types</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_window_properties</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">,</span>
+        <span class="n">property_handlers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]],</span>
+        <span class="n">boundary_types</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle window properties efficiently&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;name &#39;</span><span class="p">):</span>
             <span class="n">state</span><span class="o">.</span><span class="n">window_data</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
@@ -563,7 +615,7 @@
                     <span class="k">return</span> <span class="kc">True</span>
         <span class="k">return</span> <span class="kc">True</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_capacitance_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_capacitance_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle capacitance properties efficiently&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;&lt;&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;&lt;/&#39;</span><span class="p">):</span>
             <span class="n">conductor_name</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
@@ -571,7 +623,12 @@
                 <span class="n">state</span><span class="o">.</span><span class="n">task_data</span><span class="p">[</span><span class="s1">&#39;capacitance_targets&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">conductor_name</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">True</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_section_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">property_handlers</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_section_properties</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="n">ParserState</span><span class="p">,</span>
+        <span class="n">property_handlers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle medium/conductor section properties efficiently&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;name &#39;</span><span class="p">):</span>
             <span class="n">state</span><span class="o">.</span><span class="n">current_section_name</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
@@ -582,31 +639,31 @@
         <span class="k">return</span> <span class="kc">True</span>
     
     <span class="c1"># Optimized property parsers</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">,</span> <span class="n">prefix</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">data_dict</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">):]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">,</span> <span class="n">prefix</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">data_dict</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">):]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_diel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">,</span> <span class="n">prefix</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_diel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">data_dict</span><span class="p">[</span><span class="s1">&#39;diel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">):]</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_basepoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">,</span> <span class="n">prefix</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_basepoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;)&#39;</span><span class="p">):</span>
             <span class="n">coords_str</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">data_dict</span><span class="p">[</span><span class="s1">&#39;base&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_coords</span><span class="p">(</span><span class="n">coords_str</span><span class="p">)</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_v1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">,</span> <span class="n">prefix</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_v1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;)&#39;</span><span class="p">):</span>
             <span class="n">coords_str</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">data_dict</span><span class="p">[</span><span class="s1">&#39;v1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_coords</span><span class="p">(</span><span class="n">coords_str</span><span class="p">)</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_v2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">,</span> <span class="n">prefix</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_v2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;)&#39;</span><span class="p">):</span>
             <span class="n">coords_str</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">data_dict</span><span class="p">[</span><span class="s1">&#39;v2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_coords</span><span class="p">(</span><span class="n">coords_str</span><span class="p">)</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_hvector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">,</span> <span class="n">prefix</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_handle_hvector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;)&#39;</span><span class="p">):</span>
             <span class="n">coords_str</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">data_dict</span><span class="p">[</span><span class="s1">&#39;hvec&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_coords</span><span class="p">(</span><span class="n">coords_str</span><span class="p">)</span>
@@ -618,12 +675,12 @@
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_is_valid_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_valid_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if block has all required fields&quot;&quot;&quot;</span>
         <span class="n">required</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;section_type&#39;</span><span class="p">,</span> <span class="s1">&#39;section_name&#39;</span><span class="p">,</span> <span class="s1">&#39;base&#39;</span><span class="p">,</span> <span class="s1">&#39;v1&#39;</span><span class="p">,</span> <span class="s1">&#39;v2&#39;</span><span class="p">,</span> <span class="s1">&#39;hvec&#39;</span><span class="p">]</span>
         <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">key</span> <span class="ow">in</span> <span class="n">block_data</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">required</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_create_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Block</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Block</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create Block object from parsed data&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">Block</span><span class="p">(</span>
@@ -640,12 +697,12 @@
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: failed to create block: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">None</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_is_valid_poly</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">poly_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_valid_poly</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">poly_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if poly element has all required fields&quot;&quot;&quot;</span>
         <span class="n">required</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;section_type&#39;</span><span class="p">,</span> <span class="s1">&#39;section_name&#39;</span><span class="p">,</span> <span class="s1">&#39;base&#39;</span><span class="p">,</span> <span class="s1">&#39;v1&#39;</span><span class="p">,</span> <span class="s1">&#39;v2&#39;</span><span class="p">,</span> <span class="s1">&#39;hvec&#39;</span><span class="p">]</span>
         <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">key</span> <span class="ow">in</span> <span class="n">poly_data</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">required</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_create_poly_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">poly_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PolyElement</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_poly_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">poly_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">coordinates</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PolyElement</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create PolyElement object from parsed data&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
