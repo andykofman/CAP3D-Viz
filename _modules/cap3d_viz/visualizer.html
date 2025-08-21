@@ -178,7 +178,7 @@
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - Task info: </span><span class="si">{</span><span class="s1">&#39;Yes&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;No&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
-            <span class="n">layer_types</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">layer_types</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
                 <span class="n">layer_types</span><span class="p">[</span><span class="n">layer</span><span class="o">.</span><span class="n">type</span><span class="p">]</span> <span class="o">=</span> <span class="n">layer_types</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - Layer types: </span><span class="si">{</span><span class="nb">dict</span><span class="p">(</span><span class="n">layer_types</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -286,19 +286,21 @@
                     <span class="n">faces</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">i</span><span class="p">,</span> <span class="n">n_coords</span> <span class="o">+</span> <span class="n">next_i</span><span class="p">,</span> <span class="n">n_coords</span> <span class="o">+</span> <span class="n">i</span><span class="p">])</span>
             
             <span class="c1"># Convert faces to plotly format</span>
-            <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+            <span class="n">i_idx</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">j_idx</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">k_idx</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">face</span> <span class="ow">in</span> <span class="n">faces</span><span class="p">:</span>
-                <span class="n">i</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">face</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-                <span class="n">j</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">face</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-                <span class="n">k</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">face</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                <span class="n">i_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">face</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">j_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">face</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">k_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">face</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
             
             <span class="k">return</span> <span class="n">CachedMesh</span><span class="p">(</span>
                 <span class="n">x</span><span class="o">=</span><span class="n">vertices</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
                 <span class="n">y</span><span class="o">=</span><span class="n">vertices</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
                 <span class="n">z</span><span class="o">=</span><span class="n">vertices</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
-                <span class="n">i</span><span class="o">=</span><span class="n">i</span><span class="p">,</span>
-                <span class="n">j</span><span class="o">=</span><span class="n">j</span><span class="p">,</span>
-                <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span>
+                <span class="n">i</span><span class="o">=</span><span class="n">i_idx</span><span class="p">,</span>
+                <span class="n">j</span><span class="o">=</span><span class="n">j_idx</span><span class="p">,</span>
+                <span class="n">k</span><span class="o">=</span><span class="n">k_idx</span><span class="p">,</span>
                 <span class="n">block_type</span><span class="o">=</span><span class="s1">&#39;poly&#39;</span><span class="p">,</span>
                 <span class="n">block_index</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>  <span class="c1"># Special marker for poly elements</span>
                 <span class="n">center</span><span class="o">=</span><span class="n">poly</span><span class="o">.</span><span class="n">center</span><span class="p">,</span>
@@ -798,8 +800,12 @@
             <span class="k">return</span>
         
         <span class="c1"># Combine all vertices and faces</span>
-        <span class="n">all_x</span><span class="p">,</span> <span class="n">all_y</span><span class="p">,</span> <span class="n">all_z</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
-        <span class="n">all_i</span><span class="p">,</span> <span class="n">all_j</span><span class="p">,</span> <span class="n">all_k</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="n">all_x</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">all_y</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">all_z</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">all_i</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">all_j</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">all_k</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">vertex_offset</span> <span class="o">=</span> <span class="mi">0</span>
         
         <span class="k">for</span> <span class="n">mesh</span> <span class="ow">in</span> <span class="n">meshes</span><span class="p">:</span>
@@ -869,8 +875,12 @@
                 <span class="n">color</span> <span class="o">=</span> <span class="n">color</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;0.3&#39;</span><span class="p">,</span> <span class="s1">&#39;0.4&#39;</span><span class="p">)</span>  <span class="c1"># Slightly more opaque for batched</span>
             
             <span class="c1"># Combine meshes in this batch</span>
-            <span class="n">all_x</span><span class="p">,</span> <span class="n">all_y</span><span class="p">,</span> <span class="n">all_z</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
-            <span class="n">all_i</span><span class="p">,</span> <span class="n">all_j</span><span class="p">,</span> <span class="n">all_k</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+            <span class="n">all_x</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">all_y</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">all_z</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">all_i</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">all_j</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">all_k</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">vertex_offset</span> <span class="o">=</span> <span class="mi">0</span>
             
             <span class="k">for</span> <span class="n">mesh</span> <span class="ow">in</span> <span class="n">batch_meshes</span><span class="p">:</span>
