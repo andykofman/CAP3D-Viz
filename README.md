@@ -37,7 +37,7 @@ pip install cap3d-viz
 ### Development Installation
 
 ```bash
-git clone https://github.com/your-repo/cap3d-viz.git
+git clone https://github.com/andykofman/RWCap_view.git
 cd cap3d-viz
 pip install -e .[dev]
 ```

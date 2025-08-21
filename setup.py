@@ -29,7 +29,7 @@ setup(
     project_urls={
         "Bug Reports": "https://github.com/andykofman/RWCap_view/issues",
         "Source": "https://github.com/andykofman/RWCap_view",
-        "Documentation": "https://github.com/andykofman/RWCap_view",
+        "Documentation": "https://github.com/andykofman/RWCap_view/docs",
     },
     
     # License and classification
