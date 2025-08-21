@@ -1,0 +1,101 @@
+name: Test PyPI Installation
+
+on:
+  schedule:
+    # Test PyPI installation daily at 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:  # Allow manual triggering
+  
+jobs:
+  test-pypi-install:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: [3.8, 3.9, 3.10, 3.11, 3.12]
+    
+    steps:
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install from PyPI
+      run: |
+        python -m pip install --upgrade pip
+        pip install cap3d-viz
+    
+    - name: Test basic functionality
+      run: |
+        python -c "
+        import cap3d_viz
+        print('✅ Package imported successfully')
+        print(f'📦 Version: {cap3d_viz.__version__}')
+        
+        # Test core imports
+        from cap3d_viz import OptimizedCap3DVisualizer, StreamingCap3DParser
+        from cap3d_viz import Block, Layer, PolyElement
+        from cap3d_viz import load_and_visualize, quick_preview
+        print('✅ All core imports successful')
+        
+        # Test object creation
+        visualizer = OptimizedCap3DVisualizer()
+        print('✅ Visualizer creation successful')
+        
+        # Test Block creation
+        block = Block(
+            name='test', type='conductor', parent_name='medium',
+            base=[0,0,0], v1=[1,0,0], v2=[0,1,0], hvec=[0,0,1]
+        )
+        print('✅ Block creation successful')
+        print('🎉 All tests passed!')
+        "
+    
+    - name: Test package metadata
+      run: |
+        python -c "
+        import cap3d_viz
+        import pkg_resources
+        
+        # Get package metadata
+        pkg = pkg_resources.get_distribution('cap3d-viz')
+        print(f'📦 Package: {pkg.project_name}')
+        print(f'🏷️  Version: {pkg.version}')
+        print(f'📍 Location: {pkg.location}')
+        print(f'✅ Metadata check passed')
+        "
+
+  notify-on-failure:
+    needs: test-pypi-install
+    runs-on: ubuntu-latest
+    if: failure()
+    
+    steps:
+    - name: Create issue on failure
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: '🚨 PyPI Installation Test Failed',
+            body: `
+            ## PyPI Installation Test Failure
+            
+            The scheduled test of PyPI installation has failed.
+            
+            **Details:**
+            - **Workflow**: ${context.workflow}
+            - **Run ID**: ${context.runId}
+            - **Triggered by**: ${context.eventName}
+            - **Time**: ${new Date().toISOString()}
+            
+            **Action Required:**
+            1. Check the [workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId}) for details
+            2. Verify PyPI package status at https://pypi.org/project/cap3d-viz/
+            3. Test local installation: \`pip install cap3d-viz\`
+            
+            This issue was automatically created by the PyPI installation test workflow.
+            `,
+            labels: ['bug', 'pypi', 'automated']
+          });

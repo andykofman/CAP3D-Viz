@@ -1,0 +1,157 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v1.0.0
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+    
+    - name: Build package
+      run: python -m build
+    
+    - name: Check package
+      run: twine check dist/*
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist
+        path: dist/
+
+  test-install:
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: [3.8, 3.9, 3.10, 3.11, 3.12]
+    
+    steps:
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: dist
+        path: dist/
+    
+    - name: Test package installation
+      run: |
+        pip install dist/*.whl
+        python -c "import cap3d_viz; print('Package version:', cap3d_viz.__version__); print('Import successful!')"
+
+  create-release:
+    needs: [build, test-install]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: dist
+        path: dist/
+    
+    - name: Extract version from tag
+      id: version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+    
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: CAP3D-Viz v${{ steps.version.outputs.VERSION }}
+        body: |
+          ## CAP3D-Viz v${{ steps.version.outputs.VERSION }}
+          
+          ### 🚀 Features
+          - High-performance 3D visualization for CAP3D files
+          - State-machine parser with 70-80% performance improvement
+          - Memory-efficient streaming for large datasets (10k+ blocks)
+          - Interactive 3D visualization with batched rendering
+          - Professional IC design features and industry-standard colors
+          
+          ### 📦 Installation
+          ```bash
+          pip install cap3d-viz==${{ steps.version.outputs.VERSION }}
+          ```
+          
+          ### 📊 Performance Benchmarks
+          - **Parse Speed**: 9,882+ blocks/second
+          - **Memory Usage**: <8MB for 10k blocks
+          - **Interactive Filtering**: <500ms latency
+          - **Visualization**: 50k+ blocks with smooth rendering
+          
+          ### 📄 Documentation
+          - [PyPI Package](https://pypi.org/project/cap3d-viz/)
+          - [GitHub Repository](https://github.com/andykofman/RWCap_view)
+          - [Installation Guide](https://github.com/andykofman/RWCap_view/blob/main/docs/installation.md)
+          - [Performance Guide](https://github.com/andykofman/RWCap_view/blob/main/docs/performance.md)
+          
+          ### 🎯 Citation
+          ```bibtex
+          @software{cap3d_viz_${{ steps.version.outputs.VERSION }},
+            author    = {Ahmed Ali},
+            title     = {{CAP3D-Viz}: High-Performance {3D} Visualization for {CAP3D} Files},
+            version   = {${{ steps.version.outputs.VERSION }}},
+            year      = {2025},
+            publisher = {PyPI},
+            url       = {https://pypi.org/project/cap3d-viz/},
+            doi       = {10.5281/zenodo.16406690}
+          }
+          ```
+        draft: false
+        prerelease: false
+    
+    - name: Upload Release Assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: dist/cap3d_viz-${{ steps.version.outputs.VERSION }}-py3-none-any.whl
+        asset_name: cap3d_viz-${{ steps.version.outputs.VERSION }}-py3-none-any.whl
+        asset_content_type: application/zip
+
+  publish-pypi:
+    needs: [build, test-install]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') && !contains(github.ref, 'pre')
+    environment: release
+    
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: dist
+        path: dist/
+    
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}
+        verbose: true

@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: [3.9, 3.10, 3.11, 3.12]
+        python-version: [3.8, 3.9, 3.10, 3.11, 3.12]
 
     steps:
     - uses: actions/checkout@v4
@@ -35,10 +35,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pytest pytest-cov black flake8 mypy
+        pip install -e .
     
     - name: Run tests
       run: |
-        pytest --cov=src --cov-report=xml
+        pytest --cov=cap3d_viz --cov-report=xml
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
@@ -68,17 +69,17 @@ jobs:
     
     - name: Check code formatting with black
       run: |
-        black src/ tests/
-        black --check src/ tests/
+        black cap3d_viz/ tests/
+        black --check cap3d_viz/ tests/
     
     - name: Lint with flake8
       run: |
-        flake8 src/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 src/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+        flake8 cap3d_viz/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 cap3d_viz/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
     
     - name: Type check with mypy
       run: |
-        mypy src/ --ignore-missing-imports
+        mypy cap3d_viz/ --ignore-missing-imports
 
   security:
     runs-on: ubuntu-latest
@@ -101,7 +102,7 @@ jobs:
     
     - name: Run security checks with bandit
       run: |
-        bandit -r src/ -f json -o bandit-report.json || true
+        bandit -r cap3d_viz/ -f json -o bandit-report.json || true
     
     - name: Check for known security vulnerabilities
       run: |
