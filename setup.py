@@ -11,13 +11,18 @@ here = pathlib.Path(__file__).parent.resolve()
 long_description = (here / "README.md").read_text(encoding="utf-8")
 
 # Read version from the package
-version = {}
-with open("cap3d_viz/__init__.py") as fp:
-    exec(fp.read(), version)
+def get_version():
+    with open("cap3d_viz/__init__.py", "r") as fp:
+        for line in fp:
+            if line.startswith("__version__"):
+                return line.split('"')[1]
+    raise RuntimeError("Unable to find version string.")
+
+version = get_version()
 
 setup(
     name="cap3d-viz",
-    version=version["__version__"],
+    version=version,
     description="High-Performance 3D Visualization for CAP3D Files",
     long_description=long_description,
     long_description_content_type="text/markdown",

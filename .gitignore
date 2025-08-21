@@ -18,7 +18,15 @@ htmlcov/
 # Untracked development files
 untracked/
 docs_publication/
+.pypirc
+PYPI_UPLOAD_GUIDE.md
+upload_to_pypi.py
+cap3d_viz.egg-info/
+dist/
 
 # Logs and temporary files
 *.log
 tmp/
+,pypirc
+NEXT_STEPS_ROADMAP.md
+PROJECT_SUCCESS_SUMMARY.md
