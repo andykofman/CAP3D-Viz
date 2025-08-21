@@ -7,7 +7,7 @@ the state machine parser and streaming parser for large files.
 
 import re
 import time
-from typing import Generator, Dict, List, Tuple, Optional
+from typing import Generator, Dict, List, Tuple, Optional, Set, Callable, Any, MutableMapping
 from concurrent.futures import ThreadPoolExecutor
 
 from .data_models import (
@@ -18,7 +18,33 @@ from .data_models import (
 class ParserState:
     """Optimized parser state for state-machine based parsing"""
     
-    def __init__(self):
+    # Section state
+    current_section: Optional[str]
+    current_section_name: Optional[str]
+    current_diel: Optional[float]
+    
+    # Context flags
+    in_block: bool
+    in_poly: bool
+    in_task: bool
+    in_capacitance: bool
+    
+    # Data containers
+    block_data: Dict[str, Any]
+    poly_data: Dict[str, Any]
+    layer_data: Dict[str, Any]
+    window_data: Dict[str, Any]
+    task_data: Dict[str, Any]
+    coord_buffer: List[Tuple[float, float]]
+    
+    # Pending objects for efficient collection
+    pending_block: Optional[Block]
+    pending_poly: Optional[PolyElement]
+    pending_layer: Optional[Layer]
+    pending_window: Optional[Window]
+    pending_task: Optional[Task]
+
+    def __init__(self) -> None:
         # Section state
         self.current_section = None
         self.current_section_name = None
@@ -49,7 +75,7 @@ class ParserState:
 class StreamingCap3DParser:
     """Memory-efficient streaming parser for large cap3d files"""
     
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str) -> None:
         self.file_path = file_path
         self.stats = {
             'total_blocks': 0,
@@ -201,7 +227,7 @@ class StreamingCap3DParser:
             stats=self.stats.copy()
         )
     
-    def _create_tag_handlers(self):
+    def _create_tag_handlers(self) -> Dict[str, Callable[[ParserState], None]]:
         """Create optimized tag dispatch table"""
         return {
             '<layer>': self._start_layer,
@@ -224,7 +250,7 @@ class StreamingCap3DParser:
             '</capacitance': self._end_capacitance,
         }
     
-    def _create_property_handlers(self):
+    def _create_property_handlers(self) -> Dict[str, Callable[[str, MutableMapping[str, Any], str], None]]:
         """Create optimized property dispatch table"""
         return {
             'name ': self._handle_name,
@@ -236,8 +262,18 @@ class StreamingCap3DParser:
             'hvector(': self._handle_hvector,
         }
     
-    def _handle_line_optimized(self, line, state, tag_handlers, property_handlers, 
-                              blocks, poly_elements, layers, layer_types, boundary_types):
+    def _handle_line_optimized(
+        self,
+        line: str,
+        state: ParserState,
+        tag_handlers: Dict[str, Callable[[ParserState], None]],
+        property_handlers: Dict[str, Callable[[str, MutableMapping[str, Any], str], None]],
+        blocks: List[Block],
+        poly_elements: List[PolyElement],
+        layers: List[Layer],
+        layer_types: Set[str],
+        boundary_types: Set[str],
+    ) -> bool:
         """Optimized line handler using state-based dispatch"""
         
         # Fast path 1: Check for exact tag matches first
@@ -275,11 +311,11 @@ class StreamingCap3DParser:
         return False
     
     # Optimized tag handlers
-    def _start_layer(self, state): 
+    def _start_layer(self, state: ParserState) -> None: 
         state.current_section = 'layer'
         state.layer_data = {}
     
-    def _end_layer(self, state):
+    def _end_layer(self, state: ParserState) -> None:
         if state.layer_data.get('name') and state.layer_data.get('type'):
             # Direct append without function call overhead
             state.pending_layer = Layer(
@@ -290,11 +326,11 @@ class StreamingCap3DParser:
         state.current_section = None
         state.layer_data = {}
     
-    def _start_window(self, state):
+    def _start_window(self, state: ParserState) -> None:
         state.current_section = 'window'
         state.window_data = {}
     
-    def _end_window(self, state):
+    def _end_window(self, state: ParserState) -> None:
         if state.window_data.get('v1') and state.window_data.get('v2'):
             import numpy as np
             state.pending_window = Window(
@@ -306,34 +342,34 @@ class StreamingCap3DParser:
         state.current_section = None
         state.window_data = {}
     
-    def _start_task(self, state):
+    def _start_task(self, state: ParserState) -> None:
         state.current_section = 'task'
         state.in_task = True
         state.task_data = {'capacitance_targets': []}
     
-    def _end_task(self, state):
+    def _end_task(self, state: ParserState) -> None:
         if state.task_data['capacitance_targets']:
             state.pending_task = Task(capacitance_targets=state.task_data['capacitance_targets'])
         state.current_section = None
         state.in_task = False
         state.task_data = {'capacitance_targets': []}
     
-    def _start_medium(self, state):
+    def _start_medium(self, state: ParserState) -> None:
         state.current_section = 'medium'
         state.current_section_name = None
         state.current_diel = None
     
-    def _start_conductor(self, state):
+    def _start_conductor(self, state: ParserState) -> None:
         state.current_section = 'conductor'
         state.current_section_name = None
         state.current_diel = None
     
-    def _end_section(self, state):
+    def _end_section(self, state: ParserState) -> None:
         state.current_section = None
         state.current_section_name = None
         state.current_diel = None
     
-    def _start_block(self, state):
+    def _start_block(self, state: ParserState) -> None:
         state.in_block = True
         state.block_data = {
             'section_type': state.current_section,
@@ -341,7 +377,7 @@ class StreamingCap3DParser:
             'diel': state.current_diel
         }
     
-    def _end_block(self, state):
+    def _end_block(self, state: ParserState) -> None:
         if state.in_block:
             state.in_block = False
             if self._is_valid_block(state.block_data):
@@ -355,7 +391,7 @@ class StreamingCap3DParser:
                         self.stats['conductors'] += 1
             state.block_data = {}
     
-    def _start_poly(self, state):
+    def _start_poly(self, state: ParserState) -> None:
         state.in_poly = True
         state.poly_data = {
             'section_type': state.current_section,
@@ -363,7 +399,7 @@ class StreamingCap3DParser:
         }
         state.coord_buffer = []
     
-    def _end_poly(self, state):
+    def _end_poly(self, state: ParserState) -> None:
         state.in_poly = False
         if self._is_valid_poly(state.poly_data):
             poly_element = self._create_poly_element(state.poly_data, state.coord_buffer)
@@ -373,22 +409,27 @@ class StreamingCap3DParser:
         state.poly_data = {}
         state.coord_buffer = []
     
-    def _start_coord(self, state):
+    def _start_coord(self, state: ParserState) -> None:
         pass  # Coordinate handling is done in property parsing
     
-    def _end_coord(self, state):
+    def _end_coord(self, state: ParserState) -> None:
         pass  # End of coord section
     
-    def _start_capacitance(self, state):
+    def _start_capacitance(self, state: ParserState) -> None:
         if state.in_task:
             state.in_capacitance = True
     
-    def _end_capacitance(self, state):
+    def _end_capacitance(self, state: ParserState) -> None:
         if state.in_task:
             state.in_capacitance = False
     
     # Optimized property handlers with reduced string operations
-    def _handle_block_properties(self, line, state, property_handlers):
+    def _handle_block_properties(
+        self,
+        line: str,
+        state: ParserState,
+        property_handlers: Dict[str, Callable[[str, MutableMapping[str, Any], str], None]],
+    ) -> bool:
         """Handle block properties efficiently"""
         # Quick check for common property prefixes
         if line.startswith('name '):
@@ -412,7 +453,12 @@ class StreamingCap3DParser:
             return True
         return False
     
-    def _handle_poly_properties(self, line, state, property_handlers):
+    def _handle_poly_properties(
+        self,
+        line: str,
+        state: ParserState,
+        property_handlers: Dict[str, Callable[[str, MutableMapping[str, Any], str], None]],
+    ) -> bool:
         """Handle poly properties efficiently"""
         if line.startswith('<coord>'):
             # Extract coordinate from the coord line
@@ -448,7 +494,7 @@ class StreamingCap3DParser:
             return True
         return False
     
-    def _handle_layer_properties(self, line, state, layer_types):
+    def _handle_layer_properties(self, line: str, state: ParserState, layer_types: Set[str]) -> bool:
         """Handle layer properties efficiently"""
         if line.startswith('name '):
             state.layer_data['name'] = line[5:].strip()
@@ -460,7 +506,13 @@ class StreamingCap3DParser:
             return False
         return True
     
-    def _handle_window_properties(self, line, state, property_handlers, boundary_types):
+    def _handle_window_properties(
+        self,
+        line: str,
+        state: ParserState,
+        property_handlers: Dict[str, Callable[[str, MutableMapping[str, Any], str], None]],
+        boundary_types: Set[str],
+    ) -> bool:
         """Handle window properties efficiently"""
         if line.startswith('name '):
             state.window_data['name'] = line[5:].strip()
@@ -473,7 +525,7 @@ class StreamingCap3DParser:
                     return True
         return True
     
-    def _handle_capacitance_properties(self, line, state):
+    def _handle_capacitance_properties(self, line: str, state: ParserState) -> bool:
         """Handle capacitance properties efficiently"""
         if not line.startswith('<') and not line.startswith('</'):
             conductor_name = line.strip()
@@ -481,7 +533,12 @@ class StreamingCap3DParser:
                 state.task_data['capacitance_targets'].append(conductor_name)
         return True
     
-    def _handle_section_properties(self, line, state, property_handlers):
+    def _handle_section_properties(
+        self,
+        line: str,
+        state: ParserState,
+        property_handlers: Dict[str, Callable[[str, MutableMapping[str, Any], str], None]],
+    ) -> bool:
         """Handle medium/conductor section properties efficiently"""
         if line.startswith('name '):
             state.current_section_name = line[5:].strip()
@@ -492,31 +549,31 @@ class StreamingCap3DParser:
         return True
     
     # Optimized property parsers
-    def _handle_name(self, line, data_dict, prefix):
+    def _handle_name(self, line: str, data_dict: MutableMapping[str, Any], prefix: str) -> None:
         data_dict['name'] = line[len(prefix):].strip()
     
-    def _handle_type(self, line, data_dict, prefix):
+    def _handle_type(self, line: str, data_dict: MutableMapping[str, Any], prefix: str) -> None:
         data_dict['type'] = line[len(prefix):].strip()
     
-    def _handle_diel(self, line, data_dict, prefix):
+    def _handle_diel(self, line: str, data_dict: MutableMapping[str, Any], prefix: str) -> None:
         data_dict['diel'] = float(line[len(prefix):].strip())
     
-    def _handle_basepoint(self, line, data_dict, prefix):
+    def _handle_basepoint(self, line: str, data_dict: MutableMapping[str, Any], prefix: str) -> None:
         if line.endswith(')'):
             coords_str = line[len(prefix):-1]
             data_dict['base'] = self._parse_coords(coords_str)
     
-    def _handle_v1(self, line, data_dict, prefix):
+    def _handle_v1(self, line: str, data_dict: MutableMapping[str, Any], prefix: str) -> None:
         if line.endswith(')'):
             coords_str = line[len(prefix):-1]
             data_dict['v1'] = self._parse_coords(coords_str)
     
-    def _handle_v2(self, line, data_dict, prefix):
+    def _handle_v2(self, line: str, data_dict: MutableMapping[str, Any], prefix: str) -> None:
         if line.endswith(')'):
             coords_str = line[len(prefix):-1]
             data_dict['v2'] = self._parse_coords(coords_str)
     
-    def _handle_hvector(self, line, data_dict, prefix):
+    def _handle_hvector(self, line: str, data_dict: MutableMapping[str, Any], prefix: str) -> None:
         if line.endswith(')'):
             coords_str = line[len(prefix):-1]
             data_dict['hvec'] = self._parse_coords(coords_str)
@@ -528,12 +585,12 @@ class StreamingCap3DParser:
         except ValueError:
             return [0.0, 0.0, 0.0]
 
-    def _is_valid_block(self, block_data: dict) -> bool:
+    def _is_valid_block(self, block_data: Dict[str, Any]) -> bool:
         """Check if block has all required fields"""
         required = ['section_type', 'section_name', 'base', 'v1', 'v2', 'hvec']
         return all(key in block_data for key in required)
 
-    def _create_block(self, block_data: dict) -> Optional[Block]:
+    def _create_block(self, block_data: Dict[str, Any]) -> Optional[Block]:
         """Create Block object from parsed data"""
         try:
             return Block(
@@ -550,12 +607,12 @@ class StreamingCap3DParser:
             print(f"Warning: failed to create block: {e}")
             return None
 
-    def _is_valid_poly(self, poly_data: dict) -> bool:
+    def _is_valid_poly(self, poly_data: Dict[str, Any]) -> bool:
         """Check if poly element has all required fields"""
         required = ['section_type', 'section_name', 'base', 'v1', 'v2', 'hvec']
         return all(key in poly_data for key in required)
 
-    def _create_poly_element(self, poly_data: dict, coordinates: List[Tuple[float, float]]) -> Optional[PolyElement]:
+    def _create_poly_element(self, poly_data: Dict[str, Any], coordinates: List[Tuple[float, float]]) -> Optional[PolyElement]:
         """Create PolyElement object from parsed data"""
         try:
             import numpy as np

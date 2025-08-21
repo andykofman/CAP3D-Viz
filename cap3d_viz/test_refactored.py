@@ -5,14 +5,10 @@ This script verifies that all functionality from the original module
 is preserved in the new modular structure.
 """
 
-import os
-import sys
 import time
+from typing import List
 
-# Add the parent directory to the path so we can import the module
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from enhanced_cache_memory import (
+from cap3d_viz import (
     # Data models
     Block, CachedMesh, Layer, PolyElement, Window, Task, ParsedCap3DData,
     
@@ -27,7 +23,7 @@ from enhanced_cache_memory import (
 )
 
 
-def test_data_models():
+def test_data_models() -> bool:
     """Test that all data models work correctly"""
     print("Testing data models...")
     
@@ -81,7 +77,7 @@ def test_data_models():
     return True
 
 
-def test_parser():
+def test_parser() -> bool:
     """Test that the parser works correctly"""
     print("Testing parser...")
     
@@ -101,7 +97,7 @@ def test_parser():
     return True
 
 
-def test_visualizer():
+def test_visualizer() -> bool:
     """Test that the visualizer works correctly"""
     print("Testing visualizer...")
     
@@ -128,7 +124,7 @@ def test_visualizer():
     return True
 
 
-def test_utility_functions():
+def test_utility_functions() -> bool:
     """Test that utility functions work correctly"""
     print("Testing utility functions...")
     
@@ -142,13 +138,13 @@ def test_utility_functions():
     return True
 
 
-def test_imports():
+def test_imports() -> bool:
     """Test that all imports work correctly"""
     print("Testing imports...")
     
     # Test that we can import everything from the main module
     try:
-        import enhanced_cache_memory
+        import cap3d_viz  # noqa: F401
         print("✓ All imports working correctly")
     except ImportError as e:
         print(f"✗ Import error: {e}")
@@ -157,12 +153,12 @@ def test_imports():
     return True
 
 
-def test_module_structure():
+def test_module_structure() -> bool:
     """Test that the module structure is correct"""
     print("Testing module structure...")
     
     # Check that the module has the expected attributes
-    import enhanced_cache_memory as ecm
+    import cap3d_viz as ecm
     
     expected_attributes = [
         'Block', 'CachedMesh', 'Layer', 'PolyElement', 'Window', 'Task', 'ParsedCap3DData',
@@ -181,7 +177,7 @@ def test_module_structure():
     return True
 
 
-def main():
+def main() -> bool:
     """Run all tests"""
     print("=== Testing Refactored Enhanced Cache Memory Module ===\n")
     
@@ -218,4 +214,3 @@ def main():
 
 if __name__ == "__main__":
     success = main()
-    sys.exit(0 if success else 1) 

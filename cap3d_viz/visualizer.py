@@ -7,7 +7,7 @@ This module contains the visualization logic for CAP3D data, including
 
 import time
 from itertools import cycle
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict, Union
 
 import numpy as np
 import plotly.graph_objects as go
@@ -23,7 +23,23 @@ from .parser import StreamingCap3DParser
 class OptimizedCap3DVisualizer:
     """High-performance 3D visualizer with LOD and caching"""
     
-    def __init__(self, max_blocks_display: int = 20000):
+    # Attribute type annotations for better static typing
+    max_blocks_display: int
+    blocks: List[Block]
+    poly_elements: List[PolyElement]
+    layers: List[Layer]
+    parse_stats: Dict[str, Union[int, float, bool]]
+    window: Optional[Window]
+    task: Optional[Task]
+    bounds: Optional[Tuple[np.ndarray, np.ndarray]]
+    _cached_meshes: List[CachedMesh]
+    _mesh_cache_valid: bool
+    _figure_cache: Optional[go.Figure]
+    medium_colors: List[str]
+    conductor_colors: List[str]
+    poly_colors: List[str]
+
+    def __init__(self, max_blocks_display: int = 20000) -> None:
         self.max_blocks_display = max_blocks_display
         self.blocks = []
         self.poly_elements = []
@@ -52,7 +68,7 @@ class OptimizedCap3DVisualizer:
             'rgba(255,69,0,0.6)', 'rgba(30,144,255,0.6)', 'rgba(255,20,147,0.6)'
         ]
     
-    def load_data(self, file_path: str, progress_callback=None):
+    def load_data(self, file_path: str, progress_callback=None) -> None:
         """Load complete CAP3D data with enhanced parsing"""
         parser = StreamingCap3DParser(file_path)
         print(f"Loading {file_path} with enhanced parser...")
@@ -97,7 +113,7 @@ class OptimizedCap3DVisualizer:
         self._mesh_cache_valid = False
         self._figure_cache = None
         
-    def _calculate_bounds(self):
+    def _calculate_bounds(self) -> None:
         """Calculate bounding box for all blocks and poly elements"""
         if not self.blocks and not self.poly_elements:
             return
@@ -213,7 +229,7 @@ class OptimizedCap3DVisualizer:
             print(f"Warning: Failed to generate poly mesh for {poly.name}: {e}")
             return None
 
-    def _build_mesh_cache(self, max_blocks: Optional[int] = None, use_lod: bool = True):
+    def _build_mesh_cache(self, max_blocks: Optional[int] = None, use_lod: bool = True) -> None:
         """Build cached mesh data for all blocks and poly elements"""
         print("Building enhanced mesh cache...")
         start_time = time.time()
@@ -685,7 +701,7 @@ class OptimizedCap3DVisualizer:
         return fig
 
     def _add_batched_meshes(self, fig: go.Figure, meshes: List[CachedMesh], 
-                           block_type: str, opacity: float):
+                           block_type: str, opacity: float) -> None:
         """Combine multiple meshes into a single trace for performance"""
         
         if not meshes:
@@ -736,7 +752,7 @@ class OptimizedCap3DVisualizer:
         ))
 
     def _add_color_batched_meshes(self, fig: go.Figure, meshes: List[CachedMesh], 
-                                 block_type: str, opacity: float):
+                                 block_type: str, opacity: float) -> None:
         """Create multiple batched traces with color cycling for visual variety"""
         
         if not meshes:
@@ -799,7 +815,17 @@ class OptimizedCap3DVisualizer:
                 hovertemplate=f'<b>{block_type.title()}</b><br>X: %{{x}}<br>Y: %{{y}}<br>Z: %{{z}}<extra></extra>'
             ))
 
-    def _create_visualization_legacy(self, show_mediums, show_conductors, z_slice, max_blocks, use_lod, show_edges, opacity_mediums, opacity_conductors):
+    def _create_visualization_legacy(
+        self,
+        show_mediums: bool,
+        show_conductors: bool,
+        z_slice: Optional[float],
+        max_blocks: Optional[int],
+        use_lod: bool,
+        show_edges: bool,
+        opacity_mediums: float,
+        opacity_conductors: float,
+    ) -> go.Figure:
         """Legacy visualization method for comparison"""
         print("Filtering blocks....")
         filtered_blocks = self.filter_blocks(
@@ -859,8 +885,8 @@ class OptimizedCap3DVisualizer:
         print(f"LOD: Reduced from {len(blocks)} to {len(selected)} blocks")
         return selected
     
-    def _add_blocks_to_figure(self, fig: go.Figure, blocks: list, 
-                            opacity: float, block_type: str, show_edges: bool):
+    def _add_blocks_to_figure(self, fig: go.Figure, blocks: List[Block], 
+                            opacity: float, block_type: str, show_edges: bool) -> None:
         """Efficiently add blocks to figure using per-block color cycling for visual distinction"""
         if not blocks:
             return
@@ -898,7 +924,7 @@ class OptimizedCap3DVisualizer:
                 hovertemplate=f'<b>{block_type.title()} {block.name}</b><br>X: %{{x}}<br>Y: %{{y}}<br>Z: %{{z}}<extra></extra>'
             ))
 
-    def create_interactive_dashboard(self, use_batched: bool = True):
+    def create_interactive_dashboard(self, use_batched: bool = True) -> go.Figure:
         """Create an interactive dashboard with controls"""
         
         # Build cache first for interactivity
@@ -1008,12 +1034,12 @@ class OptimizedCap3DVisualizer:
         
         return fig
     
-    def export_to_html(self, fig: go.Figure, filename: str = "cap3d_visualization.html"):
+    def export_to_html(self, fig: go.Figure, filename: str = "cap3d_visualization.html") -> None:
         """Export visualization to HTML file"""
         fig.write_html(filename, include_plotlyjs='cdn')
         print(f"Visualization saved to {filename}")
 
-    def clear_cache(self):
+    def clear_cache(self) -> None:
         """Clear all caches to free memory"""
         self._cached_meshes = []
         self._mesh_cache_valid = False

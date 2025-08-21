@@ -7,14 +7,23 @@ throughout the CAP3D enhanced parsing and visualization system.
 
 import numpy as np
 from dataclasses import dataclass
-from typing import List, Tuple, Optional, Dict
+from typing import List, Tuple, Optional, Dict, Sequence, Union
 
 
 class Block:
     """Represents a 3D block in the CAP3D file"""
 
-    def __init__(self, name: str, type: str, parent_name: str, 
-                 base, v1, v2, hvec, diel: Optional[float] = None):
+    def __init__(
+        self,
+        name: str,
+        type: str,
+        parent_name: str,
+        base: Sequence[float],
+        v1: Sequence[float],
+        v2: Sequence[float],
+        hvec: Sequence[float],
+        diel: Optional[float] = None,
+    ) -> None:
         
         self.name = name 
         self.type = type  # medium or conductor 
@@ -63,17 +72,17 @@ class Block:
 @dataclass
 class CachedMesh:
     """Cached mesh data for efficient rendering"""
-    x: np.ndarray  # X coordinates of vertices
-    y: np.ndarray  # Y coordinates of vertices
-    z: np.ndarray  # Z coordinates of vertices
+    x: Sequence[float]  # X coordinates of vertices
+    y: Sequence[float]  # Y coordinates of vertices
+    z: Sequence[float]  # Z coordinates of vertices
     i: List[int]   # Face connectivity indices
     j: List[int]
     k: List[int]
     block_type: str  # medium or conductor
     block_index: int  # original block index
-    center: np.ndarray  # center point of the block
+    center: Sequence[float]  # center point of the block
     volume: float  # volume of the block
-    bounds: Tuple[np.ndarray, np.ndarray]  # bounding box of the block
+    bounds: Tuple[Sequence[float], Sequence[float]]  # bounding box of the block
         
 @dataclass
 class Layer: 
@@ -124,8 +133,8 @@ class PolyElement:
 class Window: 
     """Simulation window/boundary definition"""
     name: Optional[str]
-    v1: np.ndarray  # Corner 1
-    v2: np.ndarray  # Corner 2
+    v1: Sequence[float]  # Corner 1
+    v2: Sequence[float]  # Corner 2
     boundary_type: Optional[str] = None  # e.g., 'dirichlet'
 
 
@@ -143,4 +152,4 @@ class ParsedCap3DData:
     layers: List[Layer]
     window: Optional[Window]
     task: Optional[Task]
-    stats: Dict 
+    stats: Dict[str, Union[int, float, bool]] 
