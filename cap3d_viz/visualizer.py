@@ -98,7 +98,7 @@ class OptimizedCap3DVisualizer:
         print(f"  - Task info: {'Yes' if self.task else 'No'}")
         
         if self.layers:
-            layer_types = {}
+            layer_types: Dict[str, int] = {}
             for layer in self.layers:
                 layer_types[layer.type] = layer_types.get(layer.type, 0) + 1
             print(f"  - Layer types: {dict(layer_types)}")
@@ -205,19 +205,21 @@ class OptimizedCap3DVisualizer:
                     faces.append([i, n_coords + next_i, n_coords + i])
             
             # Convert faces to plotly format
-            i, j, k = [], [], []
+            i_idx: List[int] = []
+            j_idx: List[int] = []
+            k_idx: List[int] = []
             for face in faces:
-                i.append(face[0])
-                j.append(face[1])
-                k.append(face[2])
+                i_idx.append(face[0])
+                j_idx.append(face[1])
+                k_idx.append(face[2])
             
             return CachedMesh(
                 x=vertices[:, 0],
                 y=vertices[:, 1],
                 z=vertices[:, 2],
-                i=i,
-                j=j,
-                k=k,
+                i=i_idx,
+                j=j_idx,
+                k=k_idx,
                 block_type='poly',
                 block_index=-1,  # Special marker for poly elements
                 center=poly.center,
@@ -708,8 +710,12 @@ class OptimizedCap3DVisualizer:
             return
         
         # Combine all vertices and faces
-        all_x, all_y, all_z = [], [], []
-        all_i, all_j, all_k = [], [], []
+        all_x: List[float] = []
+        all_y: List[float] = []
+        all_z: List[float] = []
+        all_i: List[int] = []
+        all_j: List[int] = []
+        all_k: List[int] = []
         vertex_offset = 0
         
         for mesh in meshes:
@@ -779,8 +785,12 @@ class OptimizedCap3DVisualizer:
                 color = color.replace('0.3', '0.4')  # Slightly more opaque for batched
             
             # Combine meshes in this batch
-            all_x, all_y, all_z = [], [], []
-            all_i, all_j, all_k = [], [], []
+            all_x: List[float] = []
+            all_y: List[float] = []
+            all_z: List[float] = []
+            all_i: List[int] = []
+            all_j: List[int] = []
+            all_k: List[int] = []
             vertex_offset = 0
             
             for mesh in batch_meshes:

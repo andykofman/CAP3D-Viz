@@ -77,7 +77,7 @@ class StreamingCap3DParser:
     
     def __init__(self, file_path: str) -> None:
         self.file_path = file_path
-        self.stats = {
+        self.stats: Dict[str, Any] = {
             'total_blocks': 0,
             'conductors': 0,
             'mediums': 0,
@@ -85,7 +85,7 @@ class StreamingCap3DParser:
             'layers': 0,
             'has_window': False,
             'has_task': False,
-            'parse_time': 0
+            'parse_time': 0.0,
         }
 
     def parse_blocks_streaming(self) -> Generator[Block, None, None]:
@@ -97,7 +97,7 @@ class StreamingCap3DParser:
             current_section_name = None
             current_diel = None
             in_block = False
-            block_data = {}
+            block_data: Dict[str, Any] = {}
             
             for line_num, line in enumerate(f, 1):
                 line = line.strip()
@@ -169,12 +169,16 @@ class StreamingCap3DParser:
         start_time = time.time()
         
         # Initialize data containers
-        blocks, poly_elements, layers = [], [], []
+        blocks: List[Block] = []
+        poly_elements: List[PolyElement] = []
+        layers: List[Layer] = []
+        window: Optional[Window]
+        task: Optional[Task]
         window, task = None, None
         
         # Pre-compile common patterns for performance
-        LAYER_TYPES = {'interconnect', 'via', 'metal', 'poly', 'contact'}
-        BOUNDARY_TYPES = {'dirichlet', 'neumann'}
+        LAYER_TYPES: Set[str] = {'interconnect', 'via', 'metal', 'poly', 'contact'}
+        BOUNDARY_TYPES: Set[str] = {'dirichlet', 'neumann'}
         
         # State-based dispatch tables for efficient parsing
         tag_handlers = self._create_tag_handlers()
@@ -224,7 +228,7 @@ class StreamingCap3DParser:
             layers=layers,
             window=window,
             task=task,
-            stats=self.stats.copy()
+            stats=self.stats.copy(),
         )
     
     def _create_tag_handlers(self) -> Dict[str, Callable[[ParserState], None]]:
@@ -631,7 +635,7 @@ class StreamingCap3DParser:
 
     def _parse_coordinate_pairs(self, coord_text: str) -> List[Tuple[float, float]]:
         """Parse coordinate pairs from text like '(1.0,2.0) (3.0,4.0)'"""
-        coordinates = []
+        coordinates: List[Tuple[float, float]] = []
         try:
             # Remove extra whitespace and split by closing parenthesis
             coord_text = coord_text.strip()
