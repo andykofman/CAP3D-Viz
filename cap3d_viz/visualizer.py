@@ -7,7 +7,7 @@ This module contains the visualization logic for CAP3D data, including
 
 import time
 from itertools import cycle
-from typing import List, Tuple, Optional, Dict, Union
+from typing import List, Tuple, Optional, Dict, Union, Callable
 
 import numpy as np
 import plotly.graph_objects as go
@@ -68,7 +68,7 @@ class OptimizedCap3DVisualizer:
             'rgba(255,69,0,0.6)', 'rgba(30,144,255,0.6)', 'rgba(255,20,147,0.6)'
         ]
     
-    def load_data(self, file_path: str, progress_callback: Optional[callable] = None) -> None:
+    def load_data(self, file_path: str, progress_callback: Optional[Callable[..., None]] = None) -> None:
         """Load complete CAP3D data with enhanced parsing"""
         parser = StreamingCap3DParser(file_path)
         print(f"Loading {file_path} with enhanced parser...")
