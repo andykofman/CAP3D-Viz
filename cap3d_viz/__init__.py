@@ -64,7 +64,7 @@ __all__ = [
 ]
 
 # Version info
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 __author__ = "CAP3D-Viz Development Team"
 
 # Citation information for academic use

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cap3d-viz"
-version = "1.0.0"
+version = "1.2.1"
 description = "High-Performance 3D Visualization for CAP3D Files"
 readme = "README.md"
 license = {file = "LICENSE"}

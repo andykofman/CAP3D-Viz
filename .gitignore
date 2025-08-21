@@ -33,3 +33,6 @@ PROJECT_SUCCESS_SUMMARY.md
 .github/README.md
 image.png
 GITHUB_WORKFLOW_SETUP_COMPLETE.md
+RELEASE_NOTES_v1.2.1.md
+RELEASE_NOTES_v1.0.0.md
+create_github_release.py
