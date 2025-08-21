@@ -396,12 +396,9 @@
         <span class="k">elif</span> <span class="n">state</span><span class="o">.</span><span class="n">current_section</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;medium&#39;</span><span class="p">,</span> <span class="s1">&#39;conductor&#39;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_section_properties</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">property_handlers</span><span class="p">)</span>
         
-        <span class="c1"># Handle coordinate data in poly context (should be handled in _handle_poly_properties)</span>
-        <span class="c1"># This is a fallback for any missed cases</span>
-        <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">in_poly</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;&lt;&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;basepoint&#39;</span><span class="p">):</span>
-            <span class="n">state</span><span class="o">.</span><span class="n">coord_buffer</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parse_coordinate_pairs</span><span class="p">(</span><span class="n">line</span><span class="p">))</span>
-            <span class="k">return</span> <span class="kc">True</span>
-        
+        <span class="c1"># Note: coordinate data in poly context is handled inside _handle_poly_properties</span>
+        <span class="c1"># No additional fallback needed here.</span>
+
         <span class="k">return</span> <span class="kc">False</span>
     
     <span class="c1"># Optimized tag handlers</span>
