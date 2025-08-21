@@ -17,6 +17,7 @@ htmlcov/
 
 # Untracked development files
 untracked/
+docs_publication/
 
 # Logs and temporary files
 *.log

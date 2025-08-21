@@ -1,0 +1,235 @@
+{
+  "system": {
+    "python": "3.13.5",
+    "platform": "Windows-11-10.0.26100-SP0",
+    "cpu": "Intel64 Family 6 Model 158 Stepping 10, GenuineIntel",
+    "memory_gb": 15.874500274658203,
+    "cpu_count": 12,
+    "enhanced_cache_version": "2.0.0"
+  },
+  "test_config": {
+    "files": [
+      "examples/large_test_10k.cap3d"
+    ],
+    "parsing": false,
+    "visualization": false,
+    "cache": false,
+    "filter": false,
+    "lod": false,
+    "performance": false,
+    "memory": false,
+    "scalability": false,
+    "stress_test": false,
+    "edge_cases": false,
+    "comparison": false,
+    "integration": false,
+    "utilities": false,
+    "all_tests": true,
+    "repeat": 5,
+    "max_blocks": 10000,
+    "stress_iterations": 10,
+    "render": false,
+    "output": "comprehensive_test_results.json",
+    "verbose": false
+  },
+  "tests": {
+    "parse_streaming_large_test_10k.cap3d": {
+      "duration_s": 1.242463199996564,
+      "peak_memory_mb": 7.257516860961914,
+      "memory_delta_mb": 15.4375,
+      "timestamp": 1755146385.4639623
+    },
+    "parse_validation_large_test_10k.cap3d": {
+      "duration_s": 0.0006977999983064365,
+      "peak_memory_mb": 0.0022916793823242188,
+      "memory_delta_mb": 0.0,
+      "timestamp": 1755146385.4899986
+    },
+    "parse_repeat_0_large_test_10k.cap3d": {
+      "duration_s": 1.5508745000006456,
+      "peak_memory_mb": 7.25566291809082,
+      "memory_delta_mb": 9.00390625,
+      "timestamp": 1755146387.098215
+    },
+    "parse_repeat_1_large_test_10k.cap3d": {
+      "duration_s": 1.3749993000019458,
+      "peak_memory_mb": 7.255563735961914,
+      "memory_delta_mb": 4.37109375,
+      "timestamp": 1755146388.520726
+    },
+    "parse_repeat_2_large_test_10k.cap3d": {
+      "duration_s": 1.4683479999985138,
+      "peak_memory_mb": 7.255434036254883,
+      "memory_delta_mb": 0.38671875,
+      "timestamp": 1755146390.0373158
+    },
+    "parse_repeat_3_large_test_10k.cap3d": {
+      "duration_s": 1.1557788999998593,
+      "peak_memory_mb": 7.25541877746582,
+      "memory_delta_mb": 0.8046875,
+      "timestamp": 1755146391.2373376
+    },
+    "parse_repeat_4_large_test_10k.cap3d": {
+      "duration_s": 1.1770805000014661,
+      "peak_memory_mb": 7.255403518676758,
+      "memory_delta_mb": 2.84375,
+      "timestamp": 1755146392.4589205
+    },
+    "viz_basic_large_test_10k.cap3d": {
+      "duration_s": 25.447018599999865,
+      "peak_memory_mb": 49.70708751678467,
+      "memory_delta_mb": 92.98828125,
+      "timestamp": 1755146418.299947
+    },
+    "viz_cached_large_test_10k.cap3d": {
+      "duration_s": 11.546292300001369,
+      "peak_memory_mb": 39.749863624572754,
+      "memory_delta_mb": 41.8671875,
+      "timestamp": 1755146430.0372472
+    },
+    "cache_build_large_test_10k.cap3d": {
+      "duration_s": 4.999392900001112,
+      "peak_memory_mb": 16.86745834350586,
+      "memory_delta_mb": 22.671875,
+      "timestamp": 1755146435.4381497
+    },
+    "cache_use_0_large_test_10k.cap3d": {
+      "duration_s": 5.610069099999237,
+      "peak_memory_mb": 22.883872032165527,
+      "memory_delta_mb": 38.32421875,
+      "timestamp": 1755146441.1593206
+    },
+    "cache_use_1_large_test_10k.cap3d": {
+      "duration_s": 6.147506699999212,
+      "peak_memory_mb": 22.88388156890869,
+      "memory_delta_mb": 20.94140625,
+      "timestamp": 1755146447.4175653
+    },
+    "cache_use_2_large_test_10k.cap3d": {
+      "duration_s": 5.496562800002721,
+      "peak_memory_mb": 22.884471893310547,
+      "memory_delta_mb": 5.71484375,
+      "timestamp": 1755146453.037979
+    },
+    "cache_performance_large_test_10k.cap3d": {
+      "avg_cache_time_s": 5.822025179862976,
+      "cache_efficiency": 0.9635910973609917
+    },
+    "cache_clear_large_test_10k.cap3d": {
+      "duration_s": 0.04754239999965648,
+      "peak_memory_mb": 0.0021772384643554688,
+      "memory_delta_mb": -34.66015625,
+      "timestamp": 1755146453.1645374
+    },
+    "filter_0_large_test_10k.cap3d": {
+      "duration_s": 0.4221828999980062,
+      "peak_memory_mb": 0.042938232421875,
+      "memory_delta_mb": -0.09375,
+      "timestamp": 1755146453.873415
+    },
+    "filter_1_large_test_10k.cap3d": {
+      "duration_s": 0.4126745000030496,
+      "peak_memory_mb": 0.0428619384765625,
+      "memory_delta_mb": 0.2109375,
+      "timestamp": 1755146454.3242483
+    },
+    "filter_2_large_test_10k.cap3d": {
+      "duration_s": 0.5921907000010833,
+      "peak_memory_mb": 0.03090667724609375,
+      "memory_delta_mb": 0.01953125,
+      "timestamp": 1755146454.9529622
+    },
+    "filter_3_large_test_10k.cap3d": {
+      "duration_s": 0.6010115999997652,
+      "peak_memory_mb": 0.05362701416015625,
+      "memory_delta_mb": 0.09375,
+      "timestamp": 1755146455.5893865
+    },
+    "lod_2500_large_test_10k.cap3d": {
+      "duration_s": 3.4904715000011493,
+      "peak_memory_mb": 0.9633560180664062,
+      "memory_delta_mb": 2.0625,
+      "timestamp": 1755146459.3408146
+    },
+    "lod_5000_large_test_10k.cap3d": {
+      "duration_s": 4.036006399997859,
+      "peak_memory_mb": 0.9632797241210938,
+      "memory_delta_mb": 0.13671875,
+      "timestamp": 1755146463.4173238
+    },
+    "lod_7500_large_test_10k.cap3d": {
+      "duration_s": 3.8092805000014778,
+      "peak_memory_mb": 0.9665451049804688,
+      "memory_delta_mb": 0.10546875,
+      "timestamp": 1755146467.2880566
+    },
+    "performance_large_test_10k.cap3d": {
+      "blocks_count": 10000,
+      "parse_time_mean_s": 0.25322442054748534,
+      "parse_time_std_s": 0.04315961048865887,
+      "parse_blocks_per_sec": 39490.66199215479,
+      "viz_time_mean_s": 2.9059999783833823,
+      "viz_time_std_s": 0.25163509185033245
+    },
+    "memory_large_test_10k.cap3d": {
+      "baseline_mb": 231.6484375,
+      "parse_delta_mb": -5.265625,
+      "viz_delta_mb": 81.25,
+      "peak_parse_mb": 7.253156661987305,
+      "peak_total_mb": 46.86617183685303,
+      "memory_per_block_kb": 7.806
+    },
+    "scalability_large_test_10k.cap3d": {
+      "blocks_100": {
+        "viz_time_s": 0.07202935218811035,
+        "time_per_block_ms": 0.7202935218811035,
+        "blocks_per_sec": 1388.3229122877863
+      },
+      "blocks_1000": {
+        "viz_time_s": 0.46642208099365234,
+        "time_per_block_ms": 0.46642208099365234,
+        "blocks_per_sec": 2143.9808292729804
+      },
+      "blocks_5000": {
+        "viz_time_s": 1.3337376117706299,
+        "time_per_block_ms": 0.26674752235412597,
+        "blocks_per_sec": 3748.8633115490766
+      },
+      "blocks_10000": {
+        "viz_time_s": 3.225811243057251,
+        "time_per_block_ms": 0.3225811243057251,
+        "blocks_per_sec": 3099.995395428821
+      }
+    },
+    "edge_cases_large_test_10k.cap3d": {
+      "empty_filter": {
+        "passed": true,
+        "count": 0
+      },
+      "extreme_lod": {
+        "passed": true,
+        "count": 1
+      },
+      "empty_visualization": {
+        "passed": true
+      }
+    },
+    "integration": {
+      "pipeline_large_test_10k.cap3d": {
+        "passed": true,
+        "total_time_s": 8.270472288131714,
+        "blocks_processed": 10000
+      }
+    }
+  },
+  "summary": {
+    "total_tests": 27,
+    "passed_tests": 27,
+    "success_rate": 1.0,
+    "avg_parse_time_s": 1.138606028571043,
+    "avg_viz_time_s": 18.496655450000617,
+    "avg_memory_mb": 10.551410402570452,
+    "test_duration_s": 118.879474401474
+  },
+  "start_time": 1755146384.08748
+}

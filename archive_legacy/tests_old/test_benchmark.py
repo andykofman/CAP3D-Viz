@@ -12,7 +12,7 @@ import sys
 # Add src directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from ehnanced_Cache_memory import StreamingCap3DParser, OptimizedCap3DVisualizer
+from enhanced_cache_memory import StreamingCap3DParser, OptimizedCap3DVisualizer
 import plotly.io as pio
 
 def mem_mb():
@@ -80,7 +80,7 @@ def main():
         "platform": platform.platform(),
         "cpu": platform.processor(),
         "repeat": args.repeat,
-        "enhanced_version": "ehnanced_cap3d.py"
+        "enhanced_version": "enhanced_cache_memory"
     }
 
 

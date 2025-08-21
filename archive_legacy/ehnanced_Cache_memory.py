@@ -4,6 +4,48 @@ CAP3D Enhanced Parser - Optimized for Large Files
 This module provides enhanced parsing and visualization capabilities
 for large CAP3D files that may be too memory-intensive for the standard parser.
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NOTE: This is the original code that I wrote for the enhanced cache memory project.
+This file has been refactored to be more efficient and easier to understand.
+
+
+
+
+
+
+see: src/enhanced_cache_memory/ for the refactored code.
+
+
+
+
+
+
+
 """
 
 import re
