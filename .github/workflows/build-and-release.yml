@@ -56,8 +56,12 @@ jobs:
         path: dist/
     
     - name: Test package installation
+      shell: bash
       run: |
-        pip install dist/*.whl
+        # Find and install the wheel file explicitly
+        wheel_file=$(ls dist/*.whl | head -1)
+        echo "Installing wheel file: $wheel_file"
+        pip install "$wheel_file"
         python -c "import cap3d_viz; print('Package version:', cap3d_viz.__version__); print('Import successful!')"
 
   create-release:
@@ -128,14 +132,15 @@ jobs:
         prerelease: false
     
     - name: Upload Release Assets
-      uses: actions/upload-release-asset@v1
+      shell: bash
+      run: |
+        # Find and upload wheel files dynamically
+        for wheel_file in dist/*.whl; do
+          echo "Uploading asset: $wheel_file"
+          gh release upload ${{ github.ref }} "$wheel_file" --repo ${{ github.repository }}
+        done
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: dist/cap3d_viz-${{ steps.version.outputs.VERSION }}-py3-none-any.whl
-        asset_name: cap3d_viz-${{ steps.version.outputs.VERSION }}-py3-none-any.whl
-        asset_content_type: application/zip
 
   publish-pypi:
     needs: [build, test-install]
