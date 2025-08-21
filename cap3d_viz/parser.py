@@ -306,12 +306,9 @@ class StreamingCap3DParser:
         elif state.current_section in ['medium', 'conductor']:
             return self._handle_section_properties(line, state, property_handlers)
         
-        # Handle coordinate data in poly context (should be handled in _handle_poly_properties)
-        # This is a fallback for any missed cases
-        if state.in_poly and not line.startswith('<') and not line.startswith('name') and not line.startswith('basepoint'):
-            state.coord_buffer.extend(self._parse_coordinate_pairs(line))
-            return True
-        
+        # Note: coordinate data in poly context is handled inside _handle_poly_properties
+        # No additional fallback needed here.
+
         return False
     
     # Optimized tag handlers

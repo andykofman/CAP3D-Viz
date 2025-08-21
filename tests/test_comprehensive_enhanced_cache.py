@@ -28,7 +28,7 @@ from contextlib import contextmanager
 # Add src directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from enhanced_cache_memory import (
+from cap3d_viz import (
     StreamingCap3DParser, 
     OptimizedCap3DVisualizer,
     Block,

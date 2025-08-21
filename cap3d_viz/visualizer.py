@@ -68,7 +68,7 @@ class OptimizedCap3DVisualizer:
             'rgba(255,69,0,0.6)', 'rgba(30,144,255,0.6)', 'rgba(255,20,147,0.6)'
         ]
     
-    def load_data(self, file_path: str, progress_callback=None) -> None:
+    def load_data(self, file_path: str, progress_callback: Optional[callable] = None) -> None:
         """Load complete CAP3D data with enhanced parsing"""
         parser = StreamingCap3DParser(file_path)
         print(f"Loading {file_path} with enhanced parser...")
