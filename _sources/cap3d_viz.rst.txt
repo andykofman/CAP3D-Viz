@@ -1,0 +1,53 @@
+cap3d\_viz package
+==================
+
+Submodules
+----------
+
+cap3d\_viz.data\_models module
+------------------------------
+
+.. automodule:: cap3d_viz.data_models
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+cap3d\_viz.parser module
+------------------------
+
+.. automodule:: cap3d_viz.parser
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+cap3d\_viz.test\_refactored module
+----------------------------------
+
+.. automodule:: cap3d_viz.test_refactored
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+cap3d\_viz.utils module
+-----------------------
+
+.. automodule:: cap3d_viz.utils
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+cap3d\_viz.visualizer module
+----------------------------
+
+.. automodule:: cap3d_viz.visualizer
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: cap3d_viz
+   :members:
+   :show-inheritance:
+   :undoc-members:

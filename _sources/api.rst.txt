@@ -1,0 +1,29 @@
+API Reference
+=============
+
+.. automodule:: cap3d_viz
+   :members:
+
+Data Models
+-----------
+
+.. automodule:: cap3d_viz.data_models
+   :members:
+
+Parser
+------
+
+.. automodule:: cap3d_viz.parser
+   :members:
+
+Visualizer
+----------
+
+.. automodule:: cap3d_viz.visualizer
+   :members:
+
+Utilities
+---------
+
+.. automodule:: cap3d_viz.utils
+   :members:

@@ -1,0 +1,1151 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cap3d_viz.visualizer &mdash; CAP3D-Viz  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            CAP3D-Viz
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../performance.html">Performance Guide</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">CAP3D-Viz</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">cap3d_viz.visualizer</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for cap3d_viz.visualizer</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Visualizer Module for CAP3D Enhanced Parser</span>
+
+<span class="sd">This module contains the visualization logic for CAP3D data, including</span>
+<span class="sd">3D rendering, caching, and interactive features.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">cycle</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">plotly.subplots</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_subplots</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.express</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">px</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.data_models</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Block</span><span class="p">,</span> <span class="n">CachedMesh</span><span class="p">,</span> <span class="n">PolyElement</span><span class="p">,</span> <span class="n">Layer</span><span class="p">,</span> <span class="n">Window</span><span class="p">,</span> <span class="n">Task</span><span class="p">,</span> <span class="n">ParsedCap3DData</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">StreamingCap3DParser</span>
+
+
+<div class="viewcode-block" id="OptimizedCap3DVisualizer">
+<a class="viewcode-back" href="../../cap3d_viz.html#cap3d_viz.OptimizedCap3DVisualizer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OptimizedCap3DVisualizer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;High-performance 3D visualizer with LOD and caching&quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="OptimizedCap3DVisualizer.__init__">
+<a class="viewcode-back" href="../../cap3d_viz.html#cap3d_viz.OptimizedCap3DVisualizer.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_blocks_display</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20000</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_blocks_display</span> <span class="o">=</span> <span class="n">max_blocks_display</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">poly_elements</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parse_stats</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">window</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="c1"># Caching system for performance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cached_meshes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">CachedMesh</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_cache_valid</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_figure_cache</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="c1"># Enhanced color schemes with better contrast</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">medium_colors</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;rgba(31,119,180,0.3)&#39;</span><span class="p">,</span> <span class="s1">&#39;rgba(44,160,44,0.3)&#39;</span><span class="p">,</span> <span class="s1">&#39;rgba(255,127,14,0.3)&#39;</span><span class="p">,</span> 
+            <span class="s1">&#39;rgba(148,103,189,0.3)&#39;</span><span class="p">,</span> <span class="s1">&#39;rgba(140,86,75,0.3)&#39;</span><span class="p">,</span> <span class="s1">&#39;rgba(227,119,194,0.3)&#39;</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conductor_colors</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;rgba(214,39,40,0.9)&#39;</span><span class="p">,</span> <span class="s1">&#39;rgba(227,119,194,0.9)&#39;</span><span class="p">,</span> <span class="s1">&#39;rgba(127,127,127,0.9)&#39;</span><span class="p">,</span> 
+            <span class="s1">&#39;rgba(188,189,34,0.9)&#39;</span><span class="p">,</span> <span class="s1">&#39;rgba(23,190,207,0.9)&#39;</span><span class="p">,</span> <span class="s1">&#39;rgba(255,20,147,0.9)&#39;</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">poly_colors</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;rgba(255,165,0,0.6)&#39;</span><span class="p">,</span> <span class="s1">&#39;rgba(147,112,219,0.6)&#39;</span><span class="p">,</span> <span class="s1">&#39;rgba(50,205,50,0.6)&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;rgba(255,69,0,0.6)&#39;</span><span class="p">,</span> <span class="s1">&#39;rgba(30,144,255,0.6)&#39;</span><span class="p">,</span> <span class="s1">&#39;rgba(255,20,147,0.6)&#39;</span>
+        <span class="p">]</span></div>
+
+    
+<div class="viewcode-block" id="OptimizedCap3DVisualizer.load_data">
+<a class="viewcode-back" href="../../cap3d_viz.html#cap3d_viz.OptimizedCap3DVisualizer.load_data">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">progress_callback</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load complete CAP3D data with enhanced parsing&quot;&quot;&quot;</span>
+        <span class="n">parser</span> <span class="o">=</span> <span class="n">StreamingCap3DParser</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2"> with enhanced parser...&quot;</span><span class="p">)</span>
+
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        
+        <span class="c1"># Use comprehensive parser</span>
+        <span class="n">parsed_data</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_complete</span><span class="p">()</span>
+        
+        <span class="c1"># Store all parsed data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span> <span class="o">=</span> <span class="n">parsed_data</span><span class="o">.</span><span class="n">blocks</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">poly_elements</span> <span class="o">=</span> <span class="n">parsed_data</span><span class="o">.</span><span class="n">poly_elements</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="n">parsed_data</span><span class="o">.</span><span class="n">layers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">window</span> <span class="o">=</span> <span class="n">parsed_data</span><span class="o">.</span><span class="n">window</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">=</span> <span class="n">parsed_data</span><span class="o">.</span><span class="n">task</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parse_stats</span> <span class="o">=</span> <span class="n">parsed_data</span><span class="o">.</span><span class="n">stats</span>
+        
+        <span class="n">load_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loaded enhanced CAP3D data in </span><span class="si">{</span><span class="n">load_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Print comprehensive statistics</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Enhanced parser stats:&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - Blocks: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">parse_stats</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mediums&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2"> mediums, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">parse_stats</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;conductors&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2"> conductors)&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - Poly elements: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">poly_elements</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - Layers: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - Window: </span><span class="si">{</span><span class="s1">&#39;Yes&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;No&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - Task info: </span><span class="si">{</span><span class="s1">&#39;Yes&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;No&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+            <span class="n">layer_types</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+                <span class="n">layer_types</span><span class="p">[</span><span class="n">layer</span><span class="o">.</span><span class="n">type</span><span class="p">]</span> <span class="o">=</span> <span class="n">layer_types</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - Layer types: </span><span class="si">{</span><span class="nb">dict</span><span class="p">(</span><span class="n">layer_types</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">capacitance_targets</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - Capacitance targets: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">capacitance_targets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Calculate global bounds including poly elements</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_bounds</span><span class="p">()</span>
+        
+        <span class="c1"># Invalidate caches</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_cache_valid</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_figure_cache</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+        
+    <span class="k">def</span><span class="w"> </span><span class="nf">_calculate_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate bounding box for all blocks and poly elements&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">poly_elements</span><span class="p">:</span>
+            <span class="k">return</span>
+            
+        <span class="n">all_mins</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">all_maxs</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Sample blocks for bounds calculation</span>
+        <span class="n">sample_blocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">[:</span><span class="mi">1000</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1000</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span>
+        <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">sample_blocks</span><span class="p">:</span>
+            <span class="n">min_bound</span><span class="p">,</span> <span class="n">max_bound</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">bounds</span>
+            <span class="n">all_maxs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">max_bound</span><span class="p">)</span>
+            <span class="n">all_mins</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">min_bound</span><span class="p">)</span>
+
+        <span class="c1"># Include poly elements in bounds calculation</span>
+        <span class="n">sample_polys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">poly_elements</span><span class="p">[:</span><span class="mi">1000</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">poly_elements</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1000</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">poly_elements</span>
+        <span class="k">for</span> <span class="n">poly</span> <span class="ow">in</span> <span class="n">sample_polys</span><span class="p">:</span>
+            <span class="n">min_bound</span><span class="p">,</span> <span class="n">max_bound</span> <span class="o">=</span> <span class="n">poly</span><span class="o">.</span><span class="n">bounds</span>
+            <span class="n">all_maxs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">max_bound</span><span class="p">)</span>
+            <span class="n">all_mins</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">min_bound</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">all_mins</span> <span class="ow">and</span> <span class="n">all_maxs</span><span class="p">:</span>
+            <span class="n">all_mins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">all_mins</span><span class="p">)</span>
+            <span class="n">all_maxs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">all_maxs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="p">(</span><span class="n">all_mins</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">all_maxs</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Global bounds (blocks + polys): </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Warning: No valid geometry found for bounds calculation&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_generate_poly_mesh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">poly</span><span class="p">:</span> <span class="n">PolyElement</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">CachedMesh</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate mesh for a poly element with custom coordinate shape&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># If no custom coordinates, fall back to box shape</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">poly</span><span class="o">.</span><span class="n">coordinates</span><span class="p">:</span>
+                <span class="c1"># Use the same logic as blocks for simple case</span>
+                <span class="n">vertices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+                    <span class="n">poly</span><span class="o">.</span><span class="n">base</span><span class="p">,</span>
+                    <span class="n">poly</span><span class="o">.</span><span class="n">base</span> <span class="o">+</span> <span class="n">poly</span><span class="o">.</span><span class="n">v1</span><span class="p">,</span>
+                    <span class="n">poly</span><span class="o">.</span><span class="n">base</span> <span class="o">+</span> <span class="n">poly</span><span class="o">.</span><span class="n">v1</span> <span class="o">+</span> <span class="n">poly</span><span class="o">.</span><span class="n">v2</span><span class="p">,</span>
+                    <span class="n">poly</span><span class="o">.</span><span class="n">base</span> <span class="o">+</span> <span class="n">poly</span><span class="o">.</span><span class="n">v2</span><span class="p">,</span>
+                    <span class="n">poly</span><span class="o">.</span><span class="n">base</span> <span class="o">+</span> <span class="n">poly</span><span class="o">.</span><span class="n">hvector</span><span class="p">,</span>
+                    <span class="n">poly</span><span class="o">.</span><span class="n">base</span> <span class="o">+</span> <span class="n">poly</span><span class="o">.</span><span class="n">v1</span> <span class="o">+</span> <span class="n">poly</span><span class="o">.</span><span class="n">hvector</span><span class="p">,</span>
+                    <span class="n">poly</span><span class="o">.</span><span class="n">base</span> <span class="o">+</span> <span class="n">poly</span><span class="o">.</span><span class="n">v1</span> <span class="o">+</span> <span class="n">poly</span><span class="o">.</span><span class="n">v2</span> <span class="o">+</span> <span class="n">poly</span><span class="o">.</span><span class="n">hvector</span><span class="p">,</span>
+                    <span class="n">poly</span><span class="o">.</span><span class="n">base</span> <span class="o">+</span> <span class="n">poly</span><span class="o">.</span><span class="n">v2</span> <span class="o">+</span> <span class="n">poly</span><span class="o">.</span><span class="n">hvector</span>
+                <span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+                
+                <span class="c1"># Standard box faces</span>
+                <span class="n">faces</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>  <span class="c1"># bottom</span>
+                    <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>  <span class="c1"># top</span>
+                    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>  <span class="c1"># front</span>
+                    <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>  <span class="c1"># back</span>
+                    <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>  <span class="c1"># right</span>
+                    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>  <span class="c1"># left</span>
+                <span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Generate mesh from custom coordinates</span>
+                <span class="c1"># Convert 2D coordinates to 3D vertices by extruding</span>
+                <span class="n">bottom_vertices</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">top_vertices</span> <span class="o">=</span> <span class="p">[]</span>
+                
+                <span class="k">for</span> <span class="n">coord_x</span><span class="p">,</span> <span class="n">coord_y</span> <span class="ow">in</span> <span class="n">poly</span><span class="o">.</span><span class="n">coordinates</span><span class="p">:</span>
+                    <span class="c1"># Transform 2D coordinates to 3D space</span>
+                    <span class="n">world_pos</span> <span class="o">=</span> <span class="n">poly</span><span class="o">.</span><span class="n">base</span> <span class="o">+</span> <span class="n">coord_x</span> <span class="o">*</span> <span class="n">poly</span><span class="o">.</span><span class="n">v1</span> <span class="o">+</span> <span class="n">coord_y</span> <span class="o">*</span> <span class="n">poly</span><span class="o">.</span><span class="n">v2</span>
+                    <span class="n">bottom_vertices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">world_pos</span><span class="p">)</span>
+                    <span class="n">top_vertices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">world_pos</span> <span class="o">+</span> <span class="n">poly</span><span class="o">.</span><span class="n">hvector</span><span class="p">)</span>
+                
+                <span class="n">vertices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">bottom_vertices</span> <span class="o">+</span> <span class="n">top_vertices</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+                
+                <span class="c1"># Generate faces for the polygon</span>
+                <span class="n">faces</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">n_coords</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">poly</span><span class="o">.</span><span class="n">coordinates</span><span class="p">)</span>
+                
+                <span class="c1"># Bottom face (triangulate polygon)</span>
+                <span class="k">if</span> <span class="n">n_coords</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_coords</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                        <span class="n">faces</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+                
+                <span class="c1"># Top face (triangulate polygon, reverse winding)</span>
+                <span class="k">if</span> <span class="n">n_coords</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_coords</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                        <span class="n">faces</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">n_coords</span><span class="p">,</span> <span class="n">n_coords</span> <span class="o">+</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_coords</span> <span class="o">+</span> <span class="n">i</span><span class="p">])</span>
+                
+                <span class="c1"># Side faces</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_coords</span><span class="p">):</span>
+                    <span class="n">next_i</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">n_coords</span>
+                    <span class="c1"># Two triangles per side</span>
+                    <span class="n">faces</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">i</span><span class="p">,</span> <span class="n">next_i</span><span class="p">,</span> <span class="n">n_coords</span> <span class="o">+</span> <span class="n">next_i</span><span class="p">])</span>
+                    <span class="n">faces</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">i</span><span class="p">,</span> <span class="n">n_coords</span> <span class="o">+</span> <span class="n">next_i</span><span class="p">,</span> <span class="n">n_coords</span> <span class="o">+</span> <span class="n">i</span><span class="p">])</span>
+            
+            <span class="c1"># Convert faces to plotly format</span>
+            <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">face</span> <span class="ow">in</span> <span class="n">faces</span><span class="p">:</span>
+                <span class="n">i</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">face</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">j</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">face</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">k</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">face</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            
+            <span class="k">return</span> <span class="n">CachedMesh</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">vertices</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">vertices</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+                <span class="n">z</span><span class="o">=</span><span class="n">vertices</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
+                <span class="n">i</span><span class="o">=</span><span class="n">i</span><span class="p">,</span>
+                <span class="n">j</span><span class="o">=</span><span class="n">j</span><span class="p">,</span>
+                <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span>
+                <span class="n">block_type</span><span class="o">=</span><span class="s1">&#39;poly&#39;</span><span class="p">,</span>
+                <span class="n">block_index</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>  <span class="c1"># Special marker for poly elements</span>
+                <span class="n">center</span><span class="o">=</span><span class="n">poly</span><span class="o">.</span><span class="n">center</span><span class="p">,</span>
+                <span class="n">volume</span><span class="o">=</span><span class="n">poly</span><span class="o">.</span><span class="n">volume</span><span class="p">,</span>
+                <span class="n">bounds</span><span class="o">=</span><span class="n">poly</span><span class="o">.</span><span class="n">bounds</span>
+            <span class="p">)</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: Failed to generate poly mesh for </span><span class="si">{</span><span class="n">poly</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_mesh_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_blocks</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">use_lod</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build cached mesh data for all blocks and poly elements&quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Building enhanced mesh cache...&quot;</span><span class="p">)</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        
+        <span class="c1"># Apply LOD if needed</span>
+        <span class="n">blocks_to_cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span>
+        <span class="k">if</span> <span class="n">use_lod</span> <span class="ow">and</span> <span class="n">max_blocks</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">blocks_to_cache</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_blocks</span><span class="p">:</span>
+            <span class="n">blocks_to_cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_lod</span><span class="p">(</span><span class="n">blocks_to_cache</span><span class="p">,</span> <span class="n">max_blocks</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cached_meshes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">total_elements</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">blocks_to_cache</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">poly_elements</span><span class="p">)</span>
+        <span class="n">current_count</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="c1"># Cache block meshes</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">block</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">blocks_to_cache</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">current_count</span> <span class="o">%</span> <span class="mi">1000</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">current_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Cached </span><span class="si">{</span><span class="n">current_count</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">total_elements</span><span class="si">}</span><span class="s2"> meshes...&quot;</span><span class="p">)</span>
+                
+            <span class="n">vertices</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">vertices</span>
+            
+            <span class="c1"># Define faces using vertex indices (same as before)</span>
+            <span class="n">faces</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>  <span class="c1"># bottom</span>
+                <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>  <span class="c1"># top</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>  <span class="c1"># front</span>
+                <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>  <span class="c1"># back</span>
+                <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>  <span class="c1"># right</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>  <span class="c1"># left</span>
+            <span class="p">]</span>
+            
+            <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">face</span> <span class="ow">in</span> <span class="n">faces</span><span class="p">:</span>
+                <span class="n">i</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">face</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">j</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">face</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">k</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">face</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            
+            <span class="n">cached_mesh</span> <span class="o">=</span> <span class="n">CachedMesh</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">vertices</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">vertices</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> 
+                <span class="n">z</span><span class="o">=</span><span class="n">vertices</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
+                <span class="n">i</span><span class="o">=</span><span class="n">i</span><span class="p">,</span>
+                <span class="n">j</span><span class="o">=</span><span class="n">j</span><span class="p">,</span>
+                <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span>
+                <span class="n">block_type</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">type</span><span class="p">,</span>
+                <span class="n">block_index</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span>
+                <span class="n">center</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">center</span><span class="p">,</span>
+                <span class="n">volume</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">volume</span><span class="p">,</span>
+                <span class="n">bounds</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">bounds</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cached_meshes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cached_mesh</span><span class="p">)</span>
+            <span class="n">current_count</span> <span class="o">+=</span> <span class="mi">1</span>
+        
+        <span class="c1"># Cache poly element meshes</span>
+        <span class="k">for</span> <span class="n">poly_idx</span><span class="p">,</span> <span class="n">poly</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">poly_elements</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">current_count</span> <span class="o">%</span> <span class="mi">1000</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">current_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Cached </span><span class="si">{</span><span class="n">current_count</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">total_elements</span><span class="si">}</span><span class="s2"> meshes...&quot;</span><span class="p">)</span>
+            
+            <span class="n">poly_mesh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_poly_mesh</span><span class="p">(</span><span class="n">poly</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">poly_mesh</span><span class="p">:</span>
+                <span class="c1"># Update the block_index to be unique for poly elements</span>
+                <span class="n">poly_mesh</span><span class="o">.</span><span class="n">block_index</span> <span class="o">=</span> <span class="n">poly_idx</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cached_meshes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">poly_mesh</span><span class="p">)</span>
+            <span class="n">current_count</span> <span class="o">+=</span> <span class="mi">1</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_cache_valid</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">cache_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Built enhanced mesh cache for </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cached_meshes</span><span class="p">)</span><span class="si">}</span><span class="s2"> elements &quot;</span>
+              <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">blocks_to_cache</span><span class="p">)</span><span class="si">}</span><span class="s2"> blocks + </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">poly_elements</span><span class="p">)</span><span class="si">}</span><span class="s2"> polys) in </span><span class="si">{</span><span class="n">cache_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_figure_with_all_traces</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create figure with all traces, using visibility for filtering&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_cache_valid</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Mesh cache not built. Call _build_mesh_cache() first.&quot;</span><span class="p">)</span>
+        
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Creating figure with all traces...&quot;</span><span class="p">)</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+        
+        <span class="c1"># Group meshes by type and color</span>
+        <span class="n">medium_colors</span> <span class="o">=</span> <span class="n">cycle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">medium_colors</span><span class="p">)</span>
+        <span class="n">conductor_colors</span> <span class="o">=</span> <span class="n">cycle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conductor_colors</span><span class="p">)</span>
+        <span class="n">poly_colors</span> <span class="o">=</span> <span class="n">cycle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">poly_colors</span><span class="p">)</span>
+        
+        <span class="c1"># Add all traces at once</span>
+        <span class="k">for</span> <span class="n">mesh</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_meshes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">mesh</span><span class="o">.</span><span class="n">block_type</span> <span class="o">==</span> <span class="s1">&#39;medium&#39;</span><span class="p">:</span>
+                <span class="n">color</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">medium_colors</span><span class="p">)</span>
+                <span class="n">opacity</span> <span class="o">=</span> <span class="mf">0.3</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Medium </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">block_index</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">elif</span> <span class="n">mesh</span><span class="o">.</span><span class="n">block_type</span> <span class="o">==</span> <span class="s1">&#39;poly&#39;</span><span class="p">:</span>
+                <span class="n">color</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">poly_colors</span><span class="p">)</span>
+                <span class="n">opacity</span> <span class="o">=</span> <span class="mf">0.6</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Poly </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">block_index</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># conductor</span>
+                <span class="n">color</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">conductor_colors</span><span class="p">)</span>
+                <span class="n">opacity</span> <span class="o">=</span> <span class="mf">0.9</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Conductor </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">block_index</span><span class="si">}</span><span class="s2">&quot;</span>
+            
+            <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Mesh3d</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
+                <span class="n">z</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">z</span><span class="p">,</span>
+                <span class="n">i</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">i</span><span class="p">,</span>
+                <span class="n">j</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">j</span><span class="p">,</span>
+                <span class="n">k</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">k</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span>
+                <span class="n">opacity</span><span class="o">=</span><span class="n">opacity</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+                <span class="n">showscale</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">visible</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># All start visible</span>
+                <span class="n">hovertemplate</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;&lt;b&gt;</span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">block_type</span><span class="o">.</span><span class="n">title</span><span class="p">()</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">block_index</span><span class="si">}</span><span class="s1">&lt;/b&gt;&lt;br&gt;X: %</span><span class="se">{{</span><span class="s1">x</span><span class="se">}}</span><span class="s1">&lt;br&gt;Y: %</span><span class="se">{{</span><span class="s1">y</span><span class="se">}}</span><span class="s1">&lt;br&gt;Z: %</span><span class="se">{{</span><span class="s1">z</span><span class="se">}}</span><span class="s1">&lt;extra&gt;&lt;/extra&gt;&#39;</span><span class="p">,</span>
+                <span class="c1"># Store metadata for filtering</span>
+                <span class="n">customdata</span><span class="o">=</span><span class="p">[</span><span class="n">mesh</span><span class="o">.</span><span class="n">block_type</span><span class="p">,</span> <span class="n">mesh</span><span class="o">.</span><span class="n">center</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">mesh</span><span class="o">.</span><span class="n">volume</span><span class="p">]</span>
+            <span class="p">))</span>
+        
+        <span class="c1"># Configure layout once</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+            <span class="n">scene</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                <span class="n">xaxis_title</span><span class="o">=</span><span class="s1">&#39;X (mm)&#39;</span><span class="p">,</span>
+                <span class="n">yaxis_title</span><span class="o">=</span><span class="s1">&#39;Y (mm)&#39;</span><span class="p">,</span> 
+                <span class="n">zaxis_title</span><span class="o">=</span><span class="s1">&#39;Z (mm)&#39;</span><span class="p">,</span>
+                <span class="n">aspectmode</span><span class="o">=</span><span class="s1">&#39;data&#39;</span>
+            <span class="p">),</span>
+            <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Cached 3D CAP3D Visualization (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cached_meshes</span><span class="p">)</span><span class="si">}</span><span class="s1"> blocks)&#39;</span><span class="p">,</span>
+            <span class="n">showlegend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># Too many traces for useful legend</span>
+            <span class="n">width</span><span class="o">=</span><span class="mi">1200</span><span class="p">,</span>
+            <span class="n">height</span><span class="o">=</span><span class="mi">800</span>
+        <span class="p">)</span>
+        
+        <span class="n">build_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Created figure with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cached_meshes</span><span class="p">)</span><span class="si">}</span><span class="s2"> traces in </span><span class="si">{</span><span class="n">build_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">fig</span>
+    
+<div class="viewcode-block" id="OptimizedCap3DVisualizer.filter_blocks">
+<a class="viewcode-back" href="../../cap3d_viz.html#cap3d_viz.OptimizedCap3DVisualizer.filter_blocks">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">filter_blocks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                     <span class="n">show_mediums</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                     <span class="n">show_conductors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                     <span class="n">z_min</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>         
+                     <span class="n">z_max</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>         
+                     <span class="n">spatial_filter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                     <span class="n">volume_threshold</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Block</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Advanced filtering with multiple criteria&quot;&quot;&quot;</span>
+        <span class="n">filtered</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">:</span>
+            <span class="c1"># Type filter</span>
+            <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;medium&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">show_mediums</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;conductor&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">show_conductors</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Z-slice filter</span>
+            <span class="n">min_bound</span><span class="p">,</span> <span class="n">max_bound</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">bounds</span>
+            <span class="k">if</span> <span class="n">z_min</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">max_bound</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">z_min</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">z_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">min_bound</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">z_max</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Spatial filter (bounding box)</span>
+            <span class="k">if</span> <span class="n">spatial_filter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">filter_min</span><span class="p">,</span> <span class="n">filter_max</span> <span class="o">=</span> <span class="n">spatial_filter</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">max_bound</span> <span class="o">&lt;</span> <span class="n">filter_min</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">()</span> <span class="ow">or</span> <span class="p">(</span><span class="n">min_bound</span> <span class="o">&gt;</span> <span class="n">filter_max</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                    <span class="k">continue</span>
+            
+            <span class="c1"># Volume filter (for LOD)</span>
+            <span class="k">if</span> <span class="n">volume_threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">block</span><span class="o">.</span><span class="n">volume</span> <span class="o">&lt;</span> <span class="n">volume_threshold</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">filtered</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">filtered</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_filtered_figure_from_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                          <span class="n">show_mediums</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                                          <span class="n">show_conductors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                                          <span class="n">show_polys</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                                          <span class="n">z_min</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                          <span class="n">z_max</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new figure with only the filtered meshes from cache&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_meshes</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No cached meshes available. Build cache first.&quot;</span><span class="p">)</span>
+        
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Creating filtered figure from cache...&quot;</span><span class="p">)</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+        
+        <span class="c1"># Filter and add only the relevant meshes</span>
+        <span class="n">medium_colors</span> <span class="o">=</span> <span class="n">cycle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">medium_colors</span><span class="p">)</span>
+        <span class="n">conductor_colors</span> <span class="o">=</span> <span class="n">cycle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conductor_colors</span><span class="p">)</span>
+        <span class="n">poly_colors</span> <span class="o">=</span> <span class="n">cycle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">poly_colors</span><span class="p">)</span>
+        <span class="n">visible_count</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="k">for</span> <span class="n">mesh</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_meshes</span><span class="p">:</span>
+            <span class="c1"># Apply filters</span>
+            <span class="n">include</span> <span class="o">=</span> <span class="kc">True</span>
+            
+            <span class="c1"># Type filter</span>
+            <span class="k">if</span> <span class="n">mesh</span><span class="o">.</span><span class="n">block_type</span> <span class="o">==</span> <span class="s1">&#39;medium&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">show_mediums</span><span class="p">:</span>
+                <span class="n">include</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">elif</span> <span class="n">mesh</span><span class="o">.</span><span class="n">block_type</span> <span class="o">==</span> <span class="s1">&#39;conductor&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">show_conductors</span><span class="p">:</span>
+                <span class="n">include</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">elif</span> <span class="n">mesh</span><span class="o">.</span><span class="n">block_type</span> <span class="o">==</span> <span class="s1">&#39;poly&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">show_polys</span><span class="p">:</span>
+                <span class="n">include</span> <span class="o">=</span> <span class="kc">False</span>
+            
+            <span class="c1"># Z-slice filter</span>
+            <span class="k">if</span> <span class="n">include</span> <span class="ow">and</span> <span class="n">z_min</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">min_bound</span><span class="p">,</span> <span class="n">max_bound</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">bounds</span>
+                <span class="k">if</span> <span class="n">max_bound</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">z_min</span> <span class="ow">or</span> <span class="p">(</span><span class="n">z_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">min_bound</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">z_max</span><span class="p">):</span>
+                    <span class="n">include</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">elif</span> <span class="n">include</span> <span class="ow">and</span> <span class="n">z_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">min_bound</span><span class="p">,</span> <span class="n">max_bound</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">bounds</span>
+                <span class="k">if</span> <span class="n">min_bound</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">z_max</span><span class="p">:</span>
+                    <span class="n">include</span> <span class="o">=</span> <span class="kc">False</span>
+            
+            <span class="k">if</span> <span class="n">include</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">mesh</span><span class="o">.</span><span class="n">block_type</span> <span class="o">==</span> <span class="s1">&#39;medium&#39;</span><span class="p">:</span>
+                    <span class="n">color</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">medium_colors</span><span class="p">)</span>
+                    <span class="n">opacity</span> <span class="o">=</span> <span class="mf">0.3</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Medium </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">block_index</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">elif</span> <span class="n">mesh</span><span class="o">.</span><span class="n">block_type</span> <span class="o">==</span> <span class="s1">&#39;poly&#39;</span><span class="p">:</span>
+                    <span class="n">color</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">poly_colors</span><span class="p">)</span>
+                    <span class="n">opacity</span> <span class="o">=</span> <span class="mf">0.6</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Poly </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">block_index</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">color</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">conductor_colors</span><span class="p">)</span>
+                    <span class="n">opacity</span> <span class="o">=</span> <span class="mf">0.9</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Conductor </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">block_index</span><span class="si">}</span><span class="s2">&quot;</span>
+                
+                <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Mesh3d</span><span class="p">(</span>
+                    <span class="n">x</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
+                    <span class="n">y</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
+                    <span class="n">z</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">z</span><span class="p">,</span>
+                    <span class="n">i</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">i</span><span class="p">,</span>
+                    <span class="n">j</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">j</span><span class="p">,</span>
+                    <span class="n">k</span><span class="o">=</span><span class="n">mesh</span><span class="o">.</span><span class="n">k</span><span class="p">,</span>
+                    <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span>
+                    <span class="n">opacity</span><span class="o">=</span><span class="n">opacity</span><span class="p">,</span>
+                    <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+                    <span class="n">showscale</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">hovertemplate</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;&lt;b&gt;</span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">block_type</span><span class="o">.</span><span class="n">title</span><span class="p">()</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">mesh</span><span class="o">.</span><span class="n">block_index</span><span class="si">}</span><span class="s1">&lt;/b&gt;&lt;br&gt;X: %</span><span class="se">{{</span><span class="s1">x</span><span class="se">}}</span><span class="s1">&lt;br&gt;Y: %</span><span class="se">{{</span><span class="s1">y</span><span class="se">}}</span><span class="s1">&lt;br&gt;Z: %</span><span class="se">{{</span><span class="s1">z</span><span class="se">}}</span><span class="s1">&lt;extra&gt;&lt;/extra&gt;&#39;</span>
+                <span class="p">))</span>
+                <span class="n">visible_count</span> <span class="o">+=</span> <span class="mi">1</span>
+        
+        <span class="c1"># Configure layout</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+            <span class="n">scene</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                <span class="n">xaxis_title</span><span class="o">=</span><span class="s1">&#39;X (mm)&#39;</span><span class="p">,</span>
+                <span class="n">yaxis_title</span><span class="o">=</span><span class="s1">&#39;Y (mm)&#39;</span><span class="p">,</span> 
+                <span class="n">zaxis_title</span><span class="o">=</span><span class="s1">&#39;Z (mm)&#39;</span><span class="p">,</span>
+                <span class="n">aspectmode</span><span class="o">=</span><span class="s1">&#39;data&#39;</span>
+            <span class="p">),</span>
+            <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Cached 3D CAP3D Visualization (</span><span class="si">{</span><span class="n">visible_count</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cached_meshes</span><span class="p">)</span><span class="si">}</span><span class="s1"> blocks visible)&#39;</span><span class="p">,</span>
+            <span class="n">showlegend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># Too many traces for useful legend</span>
+            <span class="n">width</span><span class="o">=</span><span class="mi">1200</span><span class="p">,</span>
+            <span class="n">height</span><span class="o">=</span><span class="mi">800</span>
+        <span class="p">)</span>
+        
+        <span class="n">build_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Created filtered figure with </span><span class="si">{</span><span class="n">visible_count</span><span class="si">}</span><span class="s2"> traces in </span><span class="si">{</span><span class="n">build_time</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">fig</span>
+
+<div class="viewcode-block" id="OptimizedCap3DVisualizer.apply_filters_to_figure">
+<a class="viewcode-back" href="../../cap3d_viz.html#cap3d_viz.OptimizedCap3DVisualizer.apply_filters_to_figure">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_filters_to_figure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fig</span><span class="p">:</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">,</span>
+                               <span class="n">show_mediums</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                               <span class="n">show_conductors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                               <span class="n">show_polys</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                               <span class="n">z_min</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                               <span class="n">z_max</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply filters by toggling trace visibility instead of rebuilding&quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_meshes</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No cached meshes available. Build cache first.&quot;</span><span class="p">)</span>
+        
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Applying filters via visibility toggle...&quot;</span><span class="p">)</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        
+        <span class="c1"># Create visibility mask</span>
+        <span class="n">visibility_mask</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">visible_count</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">mesh</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cached_meshes</span><span class="p">):</span>
+            <span class="n">visible</span> <span class="o">=</span> <span class="kc">True</span>
+            
+            <span class="c1"># Type filter</span>
+            <span class="k">if</span> <span class="n">mesh</span><span class="o">.</span><span class="n">block_type</span> <span class="o">==</span> <span class="s1">&#39;medium&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">show_mediums</span><span class="p">:</span>
+                <span class="n">visible</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">elif</span> <span class="n">mesh</span><span class="o">.</span><span class="n">block_type</span> <span class="o">==</span> <span class="s1">&#39;conductor&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">show_conductors</span><span class="p">:</span>
+                <span class="n">visible</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">elif</span> <span class="n">mesh</span><span class="o">.</span><span class="n">block_type</span> <span class="o">==</span> <span class="s1">&#39;poly&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">show_polys</span><span class="p">:</span>
+                <span class="n">visible</span> <span class="o">=</span> <span class="kc">False</span>
+            
+            <span class="c1"># Z-slice filter</span>
+            <span class="k">if</span> <span class="n">visible</span> <span class="ow">and</span> <span class="n">z_min</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">min_bound</span><span class="p">,</span> <span class="n">max_bound</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">bounds</span>
+                <span class="k">if</span> <span class="n">max_bound</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">z_min</span> <span class="ow">or</span> <span class="p">(</span><span class="n">z_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">min_bound</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">z_max</span><span class="p">):</span>
+                    <span class="n">visible</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">elif</span> <span class="n">visible</span> <span class="ow">and</span> <span class="n">z_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">min_bound</span><span class="p">,</span> <span class="n">max_bound</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">bounds</span>
+                <span class="k">if</span> <span class="n">min_bound</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">z_max</span><span class="p">:</span>
+                    <span class="n">visible</span> <span class="o">=</span> <span class="kc">False</span>
+            
+            <span class="n">visibility_mask</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">visible</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">visible</span><span class="p">:</span>
+                <span class="n">visible_count</span> <span class="o">+=</span> <span class="mi">1</span>
+        
+        <span class="c1"># Update trace visibility individually</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">visible</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">visibility_mask</span><span class="p">):</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">visible</span> <span class="o">=</span> <span class="n">visible</span>
+        
+        <span class="c1"># Update title</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Filtered 3D CAP3D Visualization (</span><span class="si">{</span><span class="n">visible_count</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cached_meshes</span><span class="p">)</span><span class="si">}</span><span class="s1"> blocks visible)&#39;</span><span class="p">)</span>
+        
+        <span class="n">filter_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Applied filters to </span><span class="si">{</span><span class="n">visible_count</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cached_meshes</span><span class="p">)</span><span class="si">}</span><span class="s2"> blocks in </span><span class="si">{</span><span class="n">filter_time</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">fig</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_add_window_boundaries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fig</span><span class="p">:</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add window boundaries visualization as wireframe&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">fig</span>
+        
+        <span class="c1"># Create wireframe box from window corners</span>
+        <span class="n">v1</span><span class="p">,</span> <span class="n">v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">v1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">v2</span>
+        
+        <span class="c1"># Create the 8 corners of the window box</span>
+        <span class="n">corners</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+            <span class="p">[</span><span class="n">v1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">v1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">v1</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span>  <span class="c1"># min corner</span>
+            <span class="p">[</span><span class="n">v2</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">v1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">v1</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span>  
+            <span class="p">[</span><span class="n">v2</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">v2</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">v1</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span>  
+            <span class="p">[</span><span class="n">v1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">v2</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">v1</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span>  
+            <span class="p">[</span><span class="n">v1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">v1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">v2</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span>  
+            <span class="p">[</span><span class="n">v2</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">v1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">v2</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span>  
+            <span class="p">[</span><span class="n">v2</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">v2</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">v2</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span>  <span class="c1"># max corner</span>
+            <span class="p">[</span><span class="n">v1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">v2</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">v2</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span>   
+        <span class="p">])</span>
+        
+        <span class="c1"># Define the 12 edges of the box</span>
+        <span class="n">edges</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>  <span class="c1"># bottom face</span>
+            <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">],</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">],</span> <span class="p">[</span><span class="mi">7</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span>  <span class="c1"># top face  </span>
+            <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">6</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">7</span><span class="p">]</span>   <span class="c1"># vertical edges</span>
+        <span class="p">]</span>
+        
+        <span class="c1"># Create wireframe lines</span>
+        <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+            <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">edge</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter3d</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="n">corners</span><span class="p">[</span><span class="n">start</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">corners</span><span class="p">[</span><span class="n">end</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="kc">None</span><span class="p">],</span>
+                <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="n">corners</span><span class="p">[</span><span class="n">start</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">corners</span><span class="p">[</span><span class="n">end</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="kc">None</span><span class="p">],</span> 
+                <span class="n">z</span><span class="o">=</span><span class="p">[</span><span class="n">corners</span><span class="p">[</span><span class="n">start</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="n">corners</span><span class="p">[</span><span class="n">end</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="kc">None</span><span class="p">],</span>
+                <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;lines&#39;</span><span class="p">,</span>
+                <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;yellow&#39;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
+                <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Window: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">name</span> <span class="k">else</span> <span class="s1">&#39;Window Boundary&#39;</span><span class="p">,</span>
+                <span class="n">showlegend</span><span class="o">=</span><span class="p">(</span><span class="n">edge</span> <span class="o">==</span> <span class="n">edges</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>  <span class="c1"># Only show legend for first edge</span>
+                <span class="n">hovertemplate</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;&lt;b&gt;Window Boundary&lt;/b&gt;&lt;br&gt;X: %</span><span class="se">{{</span><span class="s1">x</span><span class="se">}}</span><span class="s1">&lt;br&gt;Y: %</span><span class="se">{{</span><span class="s1">y</span><span class="se">}}</span><span class="s1">&lt;br&gt;Z: %</span><span class="se">{{</span><span class="s1">z</span><span class="se">}}</span><span class="s1">&lt;extra&gt;&lt;/extra&gt;&#39;</span>
+            <span class="p">))</span>
+        
+        <span class="k">return</span> <span class="n">fig</span>
+
+<div class="viewcode-block" id="OptimizedCap3DVisualizer.create_optimized_visualization">
+<a class="viewcode-back" href="../../cap3d_viz.html#cap3d_viz.OptimizedCap3DVisualizer.create_optimized_visualization">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_optimized_visualization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                                       <span class="n">show_mediums</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                                       <span class="n">show_conductors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                                       <span class="n">show_polys</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                                       <span class="n">show_window</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                                       <span class="n">z_slice</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>                                     
+                                       <span class="n">max_blocks</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                       <span class="n">use_lod</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                                       <span class="n">show_edges</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                                       <span class="n">opacity_mediums</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">,</span>
+                                       <span class="n">opacity_conductors</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.9</span><span class="p">,</span>
+                                       <span class="n">use_cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                                       <span class="n">use_batched_rendering</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create optimized plotly visualization using caching&quot;&quot;&quot;</span>
+
+        <span class="c1"># Build cache if needed</span>
+        <span class="k">if</span> <span class="n">use_cache</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_cache_valid</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_build_mesh_cache</span><span class="p">(</span><span class="n">max_blocks</span><span class="o">=</span><span class="n">max_blocks</span><span class="p">,</span> <span class="n">use_lod</span><span class="o">=</span><span class="n">use_lod</span><span class="p">)</span>
+        
+        <span class="c1"># Use new batched rendering for better performance</span>
+        <span class="k">if</span> <span class="n">use_batched_rendering</span><span class="p">:</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_batched_visualization</span><span class="p">(</span>
+                <span class="n">show_mediums</span><span class="o">=</span><span class="n">show_mediums</span><span class="p">,</span>
+                <span class="n">show_conductors</span><span class="o">=</span><span class="n">show_conductors</span><span class="p">,</span>
+                <span class="n">z_slice</span><span class="o">=</span><span class="n">z_slice</span><span class="p">,</span>
+                <span class="n">opacity_mediums</span><span class="o">=</span><span class="n">opacity_mediums</span><span class="p">,</span>
+                <span class="n">opacity_conductors</span><span class="o">=</span><span class="n">opacity_conductors</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">use_cache</span><span class="p">:</span>
+            <span class="c1"># Create new figure with cached meshes and apply filters</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_filtered_figure_from_cache</span><span class="p">(</span>
+                <span class="n">show_mediums</span><span class="o">=</span><span class="n">show_mediums</span><span class="p">,</span>
+                <span class="n">show_conductors</span><span class="o">=</span><span class="n">show_conductors</span><span class="p">,</span>
+                <span class="n">show_polys</span><span class="o">=</span><span class="n">show_polys</span><span class="p">,</span>
+                <span class="n">z_max</span><span class="o">=</span><span class="n">z_slice</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Fallback to old method (for comparison)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using non-cached visualization (slower)...&quot;</span><span class="p">)</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_visualization_legacy</span><span class="p">(</span>
+                <span class="n">show_mediums</span><span class="p">,</span> <span class="n">show_conductors</span><span class="p">,</span> <span class="n">z_slice</span><span class="p">,</span> <span class="n">max_blocks</span><span class="p">,</span> <span class="n">use_lod</span><span class="p">,</span> <span class="n">show_edges</span><span class="p">,</span> 
+                <span class="n">opacity_mediums</span><span class="p">,</span> <span class="n">opacity_conductors</span>
+            <span class="p">)</span>
+        
+        <span class="c1"># Add window boundaries if requested</span>
+        <span class="k">if</span> <span class="n">show_window</span><span class="p">:</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_window_boundaries</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">fig</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_batched_visualization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                     <span class="n">show_mediums</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                                     <span class="n">show_conductors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                                     <span class="n">z_slice</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                     <span class="n">opacity_mediums</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">,</span>
+                                     <span class="n">opacity_conductors</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.9</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create visualization using batched geometry - MUCH faster for large datasets&quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_meshes</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No cached meshes available. Build cache first.&quot;</span><span class="p">)</span>
+        
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Creating batched visualization (high performance mode)...&quot;</span><span class="p">)</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+        
+        <span class="c1"># Separate meshes by type for batching</span>
+        <span class="n">medium_meshes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">conductor_meshes</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">mesh</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_meshes</span><span class="p">:</span>
+            <span class="c1"># Apply z-slice filter</span>
+            <span class="k">if</span> <span class="n">z_slice</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">min_bound</span><span class="p">,</span> <span class="n">max_bound</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">bounds</span>
+                <span class="k">if</span> <span class="n">min_bound</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">z_slice</span><span class="p">:</span>
+                    <span class="k">continue</span>
+            
+            <span class="k">if</span> <span class="n">mesh</span><span class="o">.</span><span class="n">block_type</span> <span class="o">==</span> <span class="s1">&#39;medium&#39;</span> <span class="ow">and</span> <span class="n">show_mediums</span><span class="p">:</span>
+                <span class="n">medium_meshes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mesh</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">mesh</span><span class="o">.</span><span class="n">block_type</span> <span class="o">==</span> <span class="s1">&#39;conductor&#39;</span> <span class="ow">and</span> <span class="n">show_conductors</span><span class="p">:</span>
+                <span class="n">conductor_meshes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mesh</span><span class="p">)</span>
+        
+        <span class="c1"># Create multiple batched traces with color cycling for variety</span>
+        <span class="k">if</span> <span class="n">medium_meshes</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_add_color_batched_meshes</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">medium_meshes</span><span class="p">,</span> <span class="s1">&#39;medium&#39;</span><span class="p">,</span> <span class="n">opacity_mediums</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">conductor_meshes</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_add_color_batched_meshes</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">conductor_meshes</span><span class="p">,</span> <span class="s1">&#39;conductor&#39;</span><span class="p">,</span> <span class="n">opacity_conductors</span><span class="p">)</span>
+        
+        <span class="c1"># Configure layout</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+            <span class="n">scene</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                <span class="n">xaxis_title</span><span class="o">=</span><span class="s1">&#39;X (mm)&#39;</span><span class="p">,</span>
+                <span class="n">yaxis_title</span><span class="o">=</span><span class="s1">&#39;Y (mm)&#39;</span><span class="p">,</span> 
+                <span class="n">zaxis_title</span><span class="o">=</span><span class="s1">&#39;Z (mm)&#39;</span><span class="p">,</span>
+                <span class="n">aspectmode</span><span class="o">=</span><span class="s1">&#39;data&#39;</span>
+            <span class="p">),</span>
+            <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Color-Batched 3D CAP3D Visualization (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">medium_meshes</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">conductor_meshes</span><span class="p">)</span><span class="si">}</span><span class="s1"> blocks, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">fig</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s1"> traces)&#39;</span><span class="p">,</span>
+            <span class="n">showlegend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">width</span><span class="o">=</span><span class="mi">1200</span><span class="p">,</span>
+            <span class="n">height</span><span class="o">=</span><span class="mi">800</span>
+        <span class="p">)</span>
+        
+        <span class="n">build_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Created color-batched figure with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">medium_meshes</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">conductor_meshes</span><span class="p">)</span><span class="si">}</span><span class="s2"> blocks (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">fig</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2"> traces) in </span><span class="si">{</span><span class="n">build_time</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">fig</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_add_batched_meshes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fig</span><span class="p">:</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">,</span> <span class="n">meshes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">CachedMesh</span><span class="p">],</span> 
+                           <span class="n">block_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">opacity</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Combine multiple meshes into a single trace for performance&quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">meshes</span><span class="p">:</span>
+            <span class="k">return</span>
+        
+        <span class="c1"># Combine all vertices and faces</span>
+        <span class="n">all_x</span><span class="p">,</span> <span class="n">all_y</span><span class="p">,</span> <span class="n">all_z</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="n">all_i</span><span class="p">,</span> <span class="n">all_j</span><span class="p">,</span> <span class="n">all_k</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="n">vertex_offset</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="k">for</span> <span class="n">mesh</span> <span class="ow">in</span> <span class="n">meshes</span><span class="p">:</span>
+            <span class="c1"># Add vertices</span>
+            <span class="n">all_x</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">all_y</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">y</span><span class="p">)</span> 
+            <span class="n">all_z</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+            
+            <span class="c1"># Add faces with proper vertex offset</span>
+            <span class="n">all_i</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">idx</span> <span class="o">+</span> <span class="n">vertex_offset</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">mesh</span><span class="o">.</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">all_j</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">idx</span> <span class="o">+</span> <span class="n">vertex_offset</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">mesh</span><span class="o">.</span><span class="n">j</span><span class="p">])</span>
+            <span class="n">all_k</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">idx</span> <span class="o">+</span> <span class="n">vertex_offset</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">mesh</span><span class="o">.</span><span class="n">k</span><span class="p">])</span>
+            
+            <span class="c1"># Update offset for next mesh</span>
+            <span class="n">vertex_offset</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+        
+        <span class="c1"># Choose color based on type using cycling pattern like other methods</span>
+        <span class="k">if</span> <span class="n">block_type</span> <span class="o">==</span> <span class="s1">&#39;medium&#39;</span><span class="p">:</span>
+            <span class="n">medium_colors</span> <span class="o">=</span> <span class="n">cycle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">medium_colors</span><span class="p">)</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">medium_colors</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;0.3&#39;</span><span class="p">,</span> <span class="s1">&#39;0.4&#39;</span><span class="p">)</span>  <span class="c1"># Slightly more opaque for batched</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Mediums (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">meshes</span><span class="p">)</span><span class="si">}</span><span class="s1"> blocks)&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">conductor_colors</span> <span class="o">=</span> <span class="n">cycle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conductor_colors</span><span class="p">)</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">conductor_colors</span><span class="p">)</span>  <span class="c1"># Keep original opacity</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Conductors (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">meshes</span><span class="p">)</span><span class="si">}</span><span class="s1"> blocks)&#39;</span>
+        
+        <span class="c1"># Create single batched trace</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Mesh3d</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">all_x</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">all_y</span><span class="p">,</span>
+            <span class="n">z</span><span class="o">=</span><span class="n">all_z</span><span class="p">,</span>
+            <span class="n">i</span><span class="o">=</span><span class="n">all_i</span><span class="p">,</span>
+            <span class="n">j</span><span class="o">=</span><span class="n">all_j</span><span class="p">,</span>
+            <span class="n">k</span><span class="o">=</span><span class="n">all_k</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span>
+            <span class="n">opacity</span><span class="o">=</span><span class="n">opacity</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">showscale</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">hovertemplate</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;&lt;b&gt;</span><span class="si">{</span><span class="n">block_type</span><span class="o">.</span><span class="n">title</span><span class="p">()</span><span class="si">}</span><span class="s1">&lt;/b&gt;&lt;br&gt;X: %</span><span class="se">{{</span><span class="s1">x</span><span class="se">}}</span><span class="s1">&lt;br&gt;Y: %</span><span class="se">{{</span><span class="s1">y</span><span class="se">}}</span><span class="s1">&lt;br&gt;Z: %</span><span class="se">{{</span><span class="s1">z</span><span class="se">}}</span><span class="s1">&lt;extra&gt;&lt;/extra&gt;&#39;</span>
+        <span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_add_color_batched_meshes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fig</span><span class="p">:</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">,</span> <span class="n">meshes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">CachedMesh</span><span class="p">],</span> 
+                                 <span class="n">block_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">opacity</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create multiple batched traces with color cycling for visual variety&quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">meshes</span><span class="p">:</span>
+            <span class="k">return</span>
+            
+        <span class="c1"># Set up color cycling</span>
+        <span class="k">if</span> <span class="n">block_type</span> <span class="o">==</span> <span class="s1">&#39;medium&#39;</span><span class="p">:</span>
+            <span class="n">colors</span> <span class="o">=</span> <span class="n">cycle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">medium_colors</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">colors</span> <span class="o">=</span> <span class="n">cycle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conductor_colors</span><span class="p">)</span>
+        
+        <span class="c1"># Create batches for color variety (balance performance vs visual variety)</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">meshes</span><span class="p">)</span> <span class="o">//</span> <span class="mi">6</span><span class="p">)</span>  <span class="c1"># Create ~6 color groups max</span>
+        
+        <span class="n">batch_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">meshes</span><span class="p">),</span> <span class="n">batch_size</span><span class="p">):</span>
+            <span class="n">batch_meshes</span> <span class="o">=</span> <span class="n">meshes</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="n">batch_size</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">batch_meshes</span><span class="p">:</span>
+                <span class="k">continue</span>
+                
+            <span class="c1"># Get next color for this batch</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">colors</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">block_type</span> <span class="o">==</span> <span class="s1">&#39;medium&#39;</span><span class="p">:</span>
+                <span class="n">color</span> <span class="o">=</span> <span class="n">color</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;0.3&#39;</span><span class="p">,</span> <span class="s1">&#39;0.4&#39;</span><span class="p">)</span>  <span class="c1"># Slightly more opaque for batched</span>
+            
+            <span class="c1"># Combine meshes in this batch</span>
+            <span class="n">all_x</span><span class="p">,</span> <span class="n">all_y</span><span class="p">,</span> <span class="n">all_z</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+            <span class="n">all_i</span><span class="p">,</span> <span class="n">all_j</span><span class="p">,</span> <span class="n">all_k</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+            <span class="n">vertex_offset</span> <span class="o">=</span> <span class="mi">0</span>
+            
+            <span class="k">for</span> <span class="n">mesh</span> <span class="ow">in</span> <span class="n">batch_meshes</span><span class="p">:</span>
+                <span class="c1"># Add vertices</span>
+                <span class="n">all_x</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+                <span class="n">all_y</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">y</span><span class="p">)</span> 
+                <span class="n">all_z</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+                
+                <span class="c1"># Add faces with proper vertex offset</span>
+                <span class="n">all_i</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">idx</span> <span class="o">+</span> <span class="n">vertex_offset</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">mesh</span><span class="o">.</span><span class="n">i</span><span class="p">])</span>
+                <span class="n">all_j</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">idx</span> <span class="o">+</span> <span class="n">vertex_offset</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">mesh</span><span class="o">.</span><span class="n">j</span><span class="p">])</span>
+                <span class="n">all_k</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">idx</span> <span class="o">+</span> <span class="n">vertex_offset</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">mesh</span><span class="o">.</span><span class="n">k</span><span class="p">])</span>
+                
+                <span class="c1"># Update offset for next mesh</span>
+                <span class="n">vertex_offset</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+            
+            <span class="c1"># Create batched trace for this color group</span>
+            <span class="n">batch_count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">block_type</span><span class="o">.</span><span class="n">title</span><span class="p">()</span><span class="si">}</span><span class="s1">s-</span><span class="si">{</span><span class="n">batch_count</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">batch_meshes</span><span class="p">)</span><span class="si">}</span><span class="s1"> blocks)&#39;</span>
+            
+            <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Mesh3d</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">all_x</span><span class="p">,</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">all_y</span><span class="p">,</span>
+                <span class="n">z</span><span class="o">=</span><span class="n">all_z</span><span class="p">,</span>
+                <span class="n">i</span><span class="o">=</span><span class="n">all_i</span><span class="p">,</span>
+                <span class="n">j</span><span class="o">=</span><span class="n">all_j</span><span class="p">,</span>
+                <span class="n">k</span><span class="o">=</span><span class="n">all_k</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span>
+                <span class="n">opacity</span><span class="o">=</span><span class="n">opacity</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+                <span class="n">showscale</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">hovertemplate</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;&lt;b&gt;</span><span class="si">{</span><span class="n">block_type</span><span class="o">.</span><span class="n">title</span><span class="p">()</span><span class="si">}</span><span class="s1">&lt;/b&gt;&lt;br&gt;X: %</span><span class="se">{{</span><span class="s1">x</span><span class="se">}}</span><span class="s1">&lt;br&gt;Y: %</span><span class="se">{{</span><span class="s1">y</span><span class="se">}}</span><span class="s1">&lt;br&gt;Z: %</span><span class="se">{{</span><span class="s1">z</span><span class="se">}}</span><span class="s1">&lt;extra&gt;&lt;/extra&gt;&#39;</span>
+            <span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_visualization_legacy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">show_mediums</span><span class="p">,</span> <span class="n">show_conductors</span><span class="p">,</span> <span class="n">z_slice</span><span class="p">,</span> <span class="n">max_blocks</span><span class="p">,</span> <span class="n">use_lod</span><span class="p">,</span> <span class="n">show_edges</span><span class="p">,</span> <span class="n">opacity_mediums</span><span class="p">,</span> <span class="n">opacity_conductors</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Legacy visualization method for comparison&quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Filtering blocks....&quot;</span><span class="p">)</span>
+        <span class="n">filtered_blocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_blocks</span><span class="p">(</span>
+            <span class="n">show_mediums</span><span class="o">=</span><span class="n">show_mediums</span><span class="p">,</span>
+            <span class="n">show_conductors</span><span class="o">=</span><span class="n">show_conductors</span><span class="p">,</span>
+            <span class="n">z_max</span><span class="o">=</span><span class="n">z_slice</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Apply LOD if needed</span>
+        <span class="k">if</span> <span class="n">use_lod</span> <span class="ow">and</span> <span class="n">max_blocks</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">filtered_blocks</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_blocks</span><span class="p">:</span>
+            <span class="n">filtered_blocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_lod</span><span class="p">(</span><span class="n">filtered_blocks</span><span class="p">,</span> <span class="n">max_blocks</span><span class="p">)</span>
+        
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Visualizing </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">filtered_blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> blocks...&quot;</span><span class="p">)</span>
+
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+
+        <span class="c1"># Group blocks by type for efficient rendering</span>
+        <span class="n">mediums</span> <span class="o">=</span> <span class="p">[</span><span class="n">b</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">filtered_blocks</span> <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;medium&#39;</span><span class="p">]</span>
+        <span class="n">conductors</span> <span class="o">=</span> <span class="p">[</span><span class="n">b</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">filtered_blocks</span> <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;conductor&#39;</span><span class="p">]</span>
+
+        <span class="c1"># Render mediums</span>
+        <span class="k">if</span> <span class="n">mediums</span> <span class="ow">and</span> <span class="n">show_mediums</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_add_blocks_to_figure</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">mediums</span><span class="p">,</span> <span class="n">opacity_mediums</span><span class="p">,</span> <span class="s1">&#39;medium&#39;</span><span class="p">,</span> <span class="n">show_edges</span><span class="p">)</span>
+
+        <span class="c1"># Render conductors</span>
+        <span class="k">if</span> <span class="n">conductors</span> <span class="ow">and</span> <span class="n">show_conductors</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_add_blocks_to_figure</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">conductors</span><span class="p">,</span> <span class="n">opacity_conductors</span><span class="p">,</span> <span class="s1">&#39;conductor&#39;</span><span class="p">,</span> <span class="n">show_edges</span><span class="p">)</span>
+
+        <span class="c1"># Configure layout</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+            <span class="n">scene</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                <span class="n">xaxis_title</span><span class="o">=</span><span class="s1">&#39;X (mm)&#39;</span><span class="p">,</span>
+                <span class="n">yaxis_title</span><span class="o">=</span><span class="s1">&#39;Y (mm)&#39;</span><span class="p">,</span> 
+                <span class="n">zaxis_title</span><span class="o">=</span><span class="s1">&#39;Z (mm)&#39;</span><span class="p">,</span>
+                <span class="n">aspectmode</span><span class="o">=</span><span class="s1">&#39;data&#39;</span>
+            <span class="p">),</span>
+            <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Legacy 3D Cap3D Visualization (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">filtered_blocks</span><span class="p">)</span><span class="si">}</span><span class="s1"> blocks)&#39;</span><span class="p">,</span>
+            <span class="n">showlegend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">legend</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">itemsizing</span><span class="o">=</span><span class="s1">&#39;constant&#39;</span><span class="p">),</span>
+            <span class="n">width</span><span class="o">=</span><span class="mi">1200</span><span class="p">,</span>
+            <span class="n">height</span><span class="o">=</span><span class="mi">800</span>
+        <span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">fig</span>      
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_apply_lod</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Block</span><span class="p">],</span> <span class="n">max_blocks</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Block</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply Level of Detail - prioritize larger, more important blocks&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">blocks</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">max_blocks</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">blocks</span>
+        <span class="c1"># Sort by volume (Larger blocks are more important)</span>
+        <span class="n">blocks_with_priority</span> <span class="o">=</span> <span class="p">[(</span><span class="n">block</span><span class="p">,</span> <span class="n">block</span><span class="o">.</span><span class="n">volume</span><span class="p">)</span> <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">blocks</span><span class="p">]</span>
+        <span class="n">blocks_with_priority</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Take top blocks by volume </span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="p">[</span><span class="n">block</span> <span class="k">for</span> <span class="n">block</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">blocks_with_priority</span><span class="p">[:</span><span class="n">max_blocks</span><span class="p">]]</span>
+                
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;LOD: Reduced from </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span><span class="si">}</span><span class="s2"> blocks&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">selected</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_add_blocks_to_figure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fig</span><span class="p">:</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">,</span> <span class="n">blocks</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> 
+                            <span class="n">opacity</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">block_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">show_edges</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Efficiently add blocks to figure using per-block color cycling for visual distinction&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">blocks</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">colors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">medium_colors</span> <span class="k">if</span> <span class="n">block_type</span> <span class="o">==</span> <span class="s1">&#39;medium&#39;</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">conductor_colors</span>
+        <span class="n">num_colors</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">colors</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">block</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">blocks</span><span class="p">):</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="n">colors</span><span class="p">[</span><span class="n">idx</span> <span class="o">%</span> <span class="n">num_colors</span><span class="p">]</span>
+            <span class="n">vertices</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">vertices</span>
+            <span class="c1"># Define faces using vertex indices</span>
+            <span class="n">faces</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>  <span class="c1"># bottom</span>
+                <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span>  <span class="c1"># top</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>  <span class="c1"># front</span>
+                <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>  <span class="c1"># back</span>
+                <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>  <span class="c1"># right</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>  <span class="c1"># left</span>
+            <span class="p">]</span>
+            <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">face</span> <span class="ow">in</span> <span class="n">faces</span><span class="p">:</span>
+                <span class="n">i</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">face</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">j</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">face</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">k</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">face</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Mesh3d</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">vertices</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">vertices</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+                <span class="n">z</span><span class="o">=</span><span class="n">vertices</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
+                <span class="n">i</span><span class="o">=</span><span class="n">i</span><span class="p">,</span>
+                <span class="n">j</span><span class="o">=</span><span class="n">j</span><span class="p">,</span>
+                <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span>
+                <span class="n">opacity</span><span class="o">=</span><span class="n">opacity</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">block_type</span><span class="o">.</span><span class="n">title</span><span class="p">()</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">block</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                <span class="n">showscale</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">hovertemplate</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;&lt;b&gt;</span><span class="si">{</span><span class="n">block_type</span><span class="o">.</span><span class="n">title</span><span class="p">()</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">block</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&lt;/b&gt;&lt;br&gt;X: %</span><span class="se">{{</span><span class="s1">x</span><span class="se">}}</span><span class="s1">&lt;br&gt;Y: %</span><span class="se">{{</span><span class="s1">y</span><span class="se">}}</span><span class="s1">&lt;br&gt;Z: %</span><span class="se">{{</span><span class="s1">z</span><span class="se">}}</span><span class="s1">&lt;extra&gt;&lt;/extra&gt;&#39;</span>
+            <span class="p">))</span>
+
+<div class="viewcode-block" id="OptimizedCap3DVisualizer.create_interactive_dashboard">
+<a class="viewcode-back" href="../../cap3d_viz.html#cap3d_viz.OptimizedCap3DVisualizer.create_interactive_dashboard">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_interactive_dashboard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_batched</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an interactive dashboard with controls&quot;&quot;&quot;</span>
+        
+        <span class="c1"># Build cache first for interactivity</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_cache_valid</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_build_mesh_cache</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">use_batched</span><span class="p">:</span>
+            <span class="c1"># Create batched visualization (2 traces max)</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_batched_visualization</span><span class="p">()</span>
+            
+            <span class="c1"># Enhanced interactivity for batched traces</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+                <span class="n">updatemenus</span><span class="o">=</span><span class="p">[</span>
+                    <span class="nb">dict</span><span class="p">(</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;buttons&quot;</span><span class="p">,</span>
+                        <span class="n">direction</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span>
+                        <span class="n">buttons</span><span class="o">=</span><span class="nb">list</span><span class="p">([</span>
+                            <span class="nb">dict</span><span class="p">(</span>
+                                <span class="n">args</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;visible&quot;</span><span class="p">:</span> <span class="p">[</span><span class="kc">True</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">fig</span><span class="o">.</span><span class="n">data</span><span class="p">)}],</span>
+                                <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Show All&quot;</span><span class="p">,</span>
+                                <span class="n">method</span><span class="o">=</span><span class="s2">&quot;restyle&quot;</span>
+                            <span class="p">),</span>
+                            <span class="nb">dict</span><span class="p">(</span>
+                                <span class="n">args</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;visible&quot;</span><span class="p">:</span> <span class="p">[</span><span class="kc">True</span> <span class="k">if</span> <span class="s1">&#39;Medium&#39;</span> <span class="ow">in</span> <span class="n">trace</span><span class="o">.</span><span class="n">name</span> <span class="k">else</span> <span class="kc">False</span> <span class="k">for</span> <span class="n">trace</span> <span class="ow">in</span> <span class="n">fig</span><span class="o">.</span><span class="n">data</span><span class="p">]}],</span>
+                                <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Mediums Only&quot;</span><span class="p">,</span> 
+                                <span class="n">method</span><span class="o">=</span><span class="s2">&quot;restyle&quot;</span>
+                            <span class="p">),</span>
+                            <span class="nb">dict</span><span class="p">(</span>
+                                <span class="n">args</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;visible&quot;</span><span class="p">:</span> <span class="p">[</span><span class="kc">True</span> <span class="k">if</span> <span class="s1">&#39;Conductor&#39;</span> <span class="ow">in</span> <span class="n">trace</span><span class="o">.</span><span class="n">name</span> <span class="k">else</span> <span class="kc">False</span> <span class="k">for</span> <span class="n">trace</span> <span class="ow">in</span> <span class="n">fig</span><span class="o">.</span><span class="n">data</span><span class="p">]}],</span>
+                                <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Conductors Only&quot;</span><span class="p">,</span>
+                                <span class="n">method</span><span class="o">=</span><span class="s2">&quot;restyle&quot;</span>
+                            <span class="p">)</span>
+                        <span class="p">]),</span>
+                        <span class="n">pad</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;r&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">},</span>
+                        <span class="n">showactive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">x</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+                        <span class="n">xanchor</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span>
+                        <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">,</span>
+                        <span class="n">yanchor</span><span class="o">=</span><span class="s2">&quot;top&quot;</span>
+                    <span class="p">),</span>
+                    <span class="c1"># Add opacity control</span>
+                    <span class="nb">dict</span><span class="p">(</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;dropdown&quot;</span><span class="p">,</span>
+                        <span class="n">direction</span><span class="o">=</span><span class="s2">&quot;down&quot;</span><span class="p">,</span>
+                        <span class="n">buttons</span><span class="o">=</span><span class="nb">list</span><span class="p">([</span>
+                            <span class="nb">dict</span><span class="p">(</span>
+                                <span class="n">args</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;opacity&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.1</span> <span class="k">if</span> <span class="s1">&#39;Medium&#39;</span> <span class="ow">in</span> <span class="n">trace</span><span class="o">.</span><span class="n">name</span> <span class="k">else</span> <span class="mf">0.9</span> <span class="k">for</span> <span class="n">trace</span> <span class="ow">in</span> <span class="n">fig</span><span class="o">.</span><span class="n">data</span><span class="p">]}],</span>
+                                <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Low Medium Opacity&quot;</span><span class="p">,</span>
+                                <span class="n">method</span><span class="o">=</span><span class="s2">&quot;restyle&quot;</span>
+                            <span class="p">),</span>
+                            <span class="nb">dict</span><span class="p">(</span>
+                                <span class="n">args</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;opacity&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.3</span> <span class="k">if</span> <span class="s1">&#39;Medium&#39;</span> <span class="ow">in</span> <span class="n">trace</span><span class="o">.</span><span class="n">name</span> <span class="k">else</span> <span class="mf">0.9</span> <span class="k">for</span> <span class="n">trace</span> <span class="ow">in</span> <span class="n">fig</span><span class="o">.</span><span class="n">data</span><span class="p">]}],</span>
+                                <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Medium Opacity&quot;</span><span class="p">,</span>
+                                <span class="n">method</span><span class="o">=</span><span class="s2">&quot;restyle&quot;</span>
+                            <span class="p">),</span>
+                            <span class="nb">dict</span><span class="p">(</span>
+                                <span class="n">args</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;opacity&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.6</span> <span class="k">if</span> <span class="s1">&#39;Medium&#39;</span> <span class="ow">in</span> <span class="n">trace</span><span class="o">.</span><span class="n">name</span> <span class="k">else</span> <span class="mf">0.9</span> <span class="k">for</span> <span class="n">trace</span> <span class="ow">in</span> <span class="n">fig</span><span class="o">.</span><span class="n">data</span><span class="p">]}],</span>
+                                <span class="n">label</span><span class="o">=</span><span class="s2">&quot;High Medium Opacity&quot;</span><span class="p">,</span>
+                                <span class="n">method</span><span class="o">=</span><span class="s2">&quot;restyle&quot;</span>
+                            <span class="p">)</span>
+                        <span class="p">]),</span>
+                        <span class="n">pad</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;r&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">},</span>
+                        <span class="n">showactive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">x</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span>
+                        <span class="n">xanchor</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span>
+                        <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">,</span>
+                        <span class="n">yanchor</span><span class="o">=</span><span class="s2">&quot;top&quot;</span>
+                    <span class="p">),</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Fallback to old method (will be slow with many blocks)</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_optimized_visualization</span><span class="p">(</span><span class="n">use_batched_rendering</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            
+            <span class="c1"># Basic interactivity for many-trace version (limited by performance)</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+                <span class="n">updatemenus</span><span class="o">=</span><span class="p">[</span>
+                    <span class="nb">dict</span><span class="p">(</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;buttons&quot;</span><span class="p">,</span>
+                        <span class="n">direction</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span>
+                        <span class="n">buttons</span><span class="o">=</span><span class="nb">list</span><span class="p">([</span>
+                            <span class="nb">dict</span><span class="p">(</span>
+                                <span class="n">args</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;visible&quot;</span><span class="p">:</span> <span class="p">[</span><span class="kc">True</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">fig</span><span class="o">.</span><span class="n">data</span><span class="p">)}],</span>
+                                <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Show All&quot;</span><span class="p">,</span>
+                                <span class="n">method</span><span class="o">=</span><span class="s2">&quot;restyle&quot;</span>
+                            <span class="p">),</span>
+                            <span class="nb">dict</span><span class="p">(</span>
+                                <span class="n">args</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;visible&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fig</span><span class="o">.</span><span class="n">data</span><span class="p">))]}],</span>
+                                <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Mediums Only&quot;</span><span class="p">,</span> 
+                                <span class="n">method</span><span class="o">=</span><span class="s2">&quot;restyle&quot;</span>
+                            <span class="p">),</span>
+                            <span class="nb">dict</span><span class="p">(</span>
+                                <span class="n">args</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;visible&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fig</span><span class="o">.</span><span class="n">data</span><span class="p">))]}],</span>
+                                <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Conductors Only&quot;</span><span class="p">,</span>
+                                <span class="n">method</span><span class="o">=</span><span class="s2">&quot;restyle&quot;</span>
+                            <span class="p">)</span>
+                        <span class="p">]),</span>
+                        <span class="n">pad</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;r&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">},</span>
+                        <span class="n">showactive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">x</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+                        <span class="n">xanchor</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span>
+                        <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">,</span>
+                        <span class="n">yanchor</span><span class="o">=</span><span class="s2">&quot;top&quot;</span>
+                    <span class="p">),</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">fig</span></div>
+
+    
+<div class="viewcode-block" id="OptimizedCap3DVisualizer.export_to_html">
+<a class="viewcode-back" href="../../cap3d_viz.html#cap3d_viz.OptimizedCap3DVisualizer.export_to_html">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">export_to_html</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fig</span><span class="p">:</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cap3d_visualization.html&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Export visualization to HTML file&quot;&quot;&quot;</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">write_html</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">include_plotlyjs</span><span class="o">=</span><span class="s1">&#39;cdn&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Visualization saved to </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OptimizedCap3DVisualizer.clear_cache">
+<a class="viewcode-back" href="../../cap3d_viz.html#cap3d_viz.OptimizedCap3DVisualizer.clear_cache">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clear all caches to free memory&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cached_meshes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_cache_valid</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_figure_cache</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cleared all visualization caches&quot;</span><span class="p">)</span> </div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Ahmed Ali.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

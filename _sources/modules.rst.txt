@@ -1,0 +1,7 @@
+cap3d_viz
+=========
+
+.. toctree::
+   :maxdepth: 4
+
+   cap3d_viz
