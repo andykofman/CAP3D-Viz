@@ -9,6 +9,7 @@ pytest-cov
 black
 flake8
 mypy
+psutil
 
 # Optional performance dependencies
 scipy>=1.7.0

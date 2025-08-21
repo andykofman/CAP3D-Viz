@@ -25,9 +25,7 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 from contextlib import contextmanager
 
-# Add src directory to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
-
+# Import from the maintained package
 from cap3d_viz import (
     StreamingCap3DParser, 
     OptimizedCap3DVisualizer,
