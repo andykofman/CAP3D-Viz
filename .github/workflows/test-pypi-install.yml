@@ -55,12 +55,11 @@ jobs:
       run: |
         python -c "
         import cap3d_viz
+        import os
         
         # Get package metadata using importlib.metadata (Python 3.8+)
         try:
-            from importlib.metadata import metadata, version
-            import cap3d_viz
-            import os
+            from importlib.metadata import version
             
             pkg_name = 'cap3d-viz'
             pkg_version = version(pkg_name)
