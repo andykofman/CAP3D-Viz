@@ -29,26 +29,26 @@ jobs:
       run: |
         python -c "
         import cap3d_viz
-        print('✅ Package imported successfully')
-        print(f'📦 Version: {cap3d_viz.__version__}')
+        print('[OK] Package imported successfully')
+        print(f'[INFO] Version: {cap3d_viz.__version__}')
         
         # Test core imports
         from cap3d_viz import OptimizedCap3DVisualizer, StreamingCap3DParser
         from cap3d_viz import Block, Layer, PolyElement
         from cap3d_viz import load_and_visualize, quick_preview
-        print('✅ All core imports successful')
+        print('[OK] All core imports successful')
         
         # Test object creation
         visualizer = OptimizedCap3DVisualizer()
-        print('✅ Visualizer creation successful')
+        print('[OK] Visualizer creation successful')
         
         # Test Block creation
         block = Block(
             name='test', type='conductor', parent_name='medium',
             base=[0,0,0], v1=[1,0,0], v2=[0,1,0], hvec=[0,0,1]
         )
-        print('✅ Block creation successful')
-        print('🎉 All tests passed!')
+        print('[OK] Block creation successful')
+        print('[SUCCESS] All tests passed!')
         "
     
     - name: Test package metadata
