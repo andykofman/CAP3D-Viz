@@ -55,14 +55,28 @@ jobs:
       run: |
         python -c "
         import cap3d_viz
-        import pkg_resources
         
-        # Get package metadata
-        pkg = pkg_resources.get_distribution('cap3d-viz')
-        print(f'📦 Package: {pkg.project_name}')
-        print(f'🏷️  Version: {pkg.version}')
-        print(f'📍 Location: {pkg.location}')
-        print(f'✅ Metadata check passed')
+        # Get package metadata using importlib.metadata (Python 3.8+)
+        try:
+            from importlib.metadata import metadata, version, distribution
+            pkg_name = 'cap3d-viz'
+            pkg_version = version(pkg_name)
+            pkg_metadata = metadata(pkg_name)
+            pkg_dist = distribution(pkg_name)
+            
+            print(f'Package: {pkg_name}')
+            print(f'Version: {pkg_version}')
+            print(f'Location: {pkg_dist.locate_file("")}')
+            print(f'Metadata check passed using importlib.metadata')
+            
+        except ImportError:
+            # Fallback for older Python versions
+            import pkg_resources
+            pkg = pkg_resources.get_distribution('cap3d-viz')
+            print(f'Package: {pkg.project_name}')
+            print(f'Version: {pkg.version}')
+            print(f'Location: {pkg.location}')
+            print(f'Metadata check passed using pkg_resources')
         "
 
   notify-on-failure:
