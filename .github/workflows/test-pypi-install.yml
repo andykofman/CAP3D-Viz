@@ -58,15 +58,17 @@ jobs:
         
         # Get package metadata using importlib.metadata (Python 3.8+)
         try:
-            from importlib.metadata import metadata, version, distribution
+            from importlib.metadata import metadata, version
+            import cap3d_viz
+            import os
+            
             pkg_name = 'cap3d-viz'
             pkg_version = version(pkg_name)
-            pkg_metadata = metadata(pkg_name)
-            pkg_dist = distribution(pkg_name)
+            pkg_location = os.path.dirname(cap3d_viz.__file__)
             
             print(f'Package: {pkg_name}')
             print(f'Version: {pkg_version}')
-            print(f'Location: {pkg_dist.locate_file("__init__.py")}')
+            print(f'Location: {pkg_location}')
             print(f'Metadata check passed using importlib.metadata')
             
         except ImportError:
