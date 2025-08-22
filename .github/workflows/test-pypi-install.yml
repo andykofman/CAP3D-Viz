@@ -66,7 +66,7 @@ jobs:
             
             print(f'Package: {pkg_name}')
             print(f'Version: {pkg_version}')
-            print(f'Location: {pkg_dist.locate_file("")}')
+            print(f'Location: {pkg_dist.locate_file("__init__.py")}')
             print(f'Metadata check passed using importlib.metadata')
             
         except ImportError:
